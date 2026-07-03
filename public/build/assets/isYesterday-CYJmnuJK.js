@@ -1,0 +1,1 @@
+import{i as o,a as t}from"./subDays-BI990jR3.js";import{c as n}from"./startOfYear-DbYoQMBP.js";function s(r){return n(r,Date.now())}function u(r){return o(r,s(r))}function c(r){return o(r,t(s(r),1))}export{u as a,c as i};
