@@ -238,7 +238,9 @@ const CustomDomainLayout = () => {
         <Route path="/shop"           element={<PageShell><Shop /></PageShell>} />
         <Route path="/blog"           element={<PageShell><Blog /></PageShell>} />
         <Route path="/product/:slug"  element={<PageShell><ProductPage /></PageShell>} />
-        <Route path="/lp/:slug"       element={<PageShell><LandingPage /></PageShell>} />
+        <Route path="/lp/:slug"            element={<PageShell><LandingPage /></PageShell>} />
+        {/* alias: full-domain links may include the /r/:id/ prefix — accept and ignore the id */}
+        <Route path="/r/:resellerId/lp/:slug" element={<PageShell><LandingPage /></PageShell>} />
 
         {/* Cart & Checkout — also accept /r/* aliases because Checkout.tsx navigates
             to /r/thank-you and /r/confirm-order when resellerRef is set */}
