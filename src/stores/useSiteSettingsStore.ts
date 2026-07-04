@@ -129,6 +129,8 @@ export interface SiteSettings {
   mohasagorCacheVersion: number;
   // Custom domain server IP — shown in reseller DNS instructions
   customDomainServerIp: string;
+  // Reseller IDs blocked from seeing any ad codes (adsense + product page ad slot)
+  adBlockedResellers: string[];
 }
 
 
@@ -277,6 +279,7 @@ const defaultSettings: SiteSettings = {
   productsCacheVersion: 1,
   mohasagorCacheVersion: 1,
   customDomainServerIp: '',
+  adBlockedResellers: [],
 };
 
 
@@ -394,6 +397,8 @@ export const useSiteSettingsStore = create<SiteSettingsStore>()(
       pushSections: state.pushSections ?? defaultSettings.pushSections,
       productsCacheVersion: state.productsCacheVersion ?? 1,
       mohasagorCacheVersion: state.mohasagorCacheVersion ?? 1,
+      customDomainServerIp: state.customDomainServerIp ?? '',
+      adBlockedResellers: state.adBlockedResellers ?? [],
     };
     try { await api.put('/admin/site-settings', allSettings); } catch (e) { console.warn('[siteSettings save] failed', e); }
   },

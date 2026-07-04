@@ -104,11 +104,13 @@ function replacePlaceholders(html: string, product: any, page: any): string {
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
 const AdSlot = () => {
-  const { adsenseCode } = useSiteSettingsStore();
+  const { adsenseCode, adBlockedResellers } = useSiteSettingsStore();
   const ref = useRef<HTMLDivElement>(null);
   const internal = isInternalUser();
+  const resellerId = useResellerRef();
+  const blocked = !!resellerId && (adBlockedResellers ?? []).includes(resellerId);
   useEffect(() => {
-    if (!ref.current || !adsenseCode || internal) return;
+    if (!ref.current || !adsenseCode || internal || blocked) return;
     const scripts = ref.current.querySelectorAll('script');
     scripts.forEach((old) => {
       const s = document.createElement('script');
@@ -116,8 +118,8 @@ const AdSlot = () => {
       s.textContent = old.textContent;
       old.replaceWith(s);
     });
-  }, [adsenseCode, internal]);
-  if (!adsenseCode || internal) return null;
+  }, [adsenseCode, internal, blocked]);
+  if (!adsenseCode || internal || blocked) return null;
   return <div ref={ref} className="my-4" dangerouslySetInnerHTML={{ __html: adsenseCode }} />;
 };
 

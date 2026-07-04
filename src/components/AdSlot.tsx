@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { isInternalUser } from '@/lib/is-internal-user';
+import { useResellerRef } from '@/contexts/ResellerRefContext';
+import { useSiteSettingsStore } from '@/stores/useSiteSettingsStore';
 
 interface AdSlotProps {
   html: string;
@@ -9,13 +11,17 @@ interface AdSlotProps {
 /**
  * Renders user-provided HTML (clickable images, AdSense, sponsor banners, etc.)
  * Re-executes any <script> tags inside the snippet so AdSense / pixel scripts work.
+ * Returns null for internal users and resellers that are ad-blocked by admin.
  */
 const AdSlot = ({ html, className }: AdSlotProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const internal = isInternalUser();
+  const resellerId = useResellerRef();
+  const adBlockedResellers = useSiteSettingsStore((s) => s.adBlockedResellers);
+  const blocked = !!resellerId && (adBlockedResellers ?? []).includes(resellerId);
 
   useEffect(() => {
-    if (internal) return;
+    if (internal || blocked) return;
     const el = ref.current;
     if (!el || !html) return;
     el.innerHTML = html;
@@ -27,9 +33,9 @@ const AdSlot = ({ html, className }: AdSlotProps) => {
       newScript.textContent = oldScript.textContent;
       oldScript.parentNode?.replaceChild(newScript, oldScript);
     });
-  }, [html, internal]);
+  }, [html, internal, blocked]);
 
-  if (!html || internal) return null;
+  if (!html || internal || blocked) return null;
   return <div ref={ref} className={className} />;
 };
 

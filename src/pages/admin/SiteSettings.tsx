@@ -3,16 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useSiteSettingsStore, type LegalPageLink } from '@/stores/useSiteSettingsStore';
 import { useCategoryStore } from '@/stores/useCategoryStore';
+import { useResellerStore } from '@/stores/useResellerStore';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Plus, Trash2, Save, Palette, Globe, Phone, LayoutDashboard, Menu, FileText, Search as SearchIcon, DollarSign } from 'lucide-react';
+import { Plus, Trash2, Save, Palette, Globe, Phone, LayoutDashboard, Menu, FileText, Search as SearchIcon, DollarSign, Users, Ban, CheckCircle2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 const SiteSettings = () => {
   const settings = useSiteSettingsStore();
   const { categories } = useCategoryStore();
+  const { resellers, fetchResellers } = useResellerStore();
 
   // Local state for form
   const [siteName, setSiteName] = useState(settings.siteName);
@@ -58,6 +61,11 @@ const SiteSettings = () => {
   const [homeFeaturedCategoriesCount, setHomeFeaturedCategoriesCount] = useState(settings.homeFeaturedCategoriesCount ?? 5);
   const [homeBestSellingCount, setHomeBestSellingCount] = useState(settings.homeBestSellingCount ?? 6);
 
+  // Ad block reseller management
+  const [adBlockOpen, setAdBlockOpen] = useState(false);
+  const [adBlockedIds, setAdBlockedIds] = useState<string[]>(settings.adBlockedResellers ?? []);
+  const [adBlockSearch, setAdBlockSearch] = useState('');
+
   // Sync local form state whenever settings load/refresh from DB
   useEffect(() => {
     setSiteName(settings.siteName);
@@ -99,8 +107,11 @@ const SiteSettings = () => {
     setProductPageDescSize(settings.productPageDescSize);
     setHomeFeaturedCategoriesCount(settings.homeFeaturedCategoriesCount ?? 5);
     setHomeBestSellingCount(settings.homeBestSellingCount ?? 6);
+    setAdBlockedIds(settings.adBlockedResellers ?? []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.loading]);
+
+  useEffect(() => { fetchResellers(); }, []);
 
   const handleSaveBranding = () => {
     settings.updateSettings({ siteName, tagline, primaryColor, secondaryColor, logoUrl, faviconUrl, footerCredit });
@@ -554,7 +565,21 @@ const SiteSettings = () => {
       {/* Google AdSense */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5" /> গুগল অ্যাডসেন্স</CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5" /> গুগল অ্যাডসেন্স</CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 shrink-0"
+              onClick={() => setAdBlockOpen(true)}
+            >
+              <Users className="h-4 w-4" />
+              রিসেলার ব্লক ম্যানেজ
+              {adBlockedIds.length > 0 && (
+                <span className="ml-1 bg-destructive text-destructive-foreground rounded-full text-xs px-1.5 py-0.5 leading-none">{adBlockedIds.length}</span>
+              )}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -588,7 +613,21 @@ const SiteSettings = () => {
       {/* Product Page Sponsor / Ad Slot */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5" /> প্রোডাক্ট পেজ স্পন্সর / অ্যাড স্লট</CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5" /> প্রোডাক্ট পেজ স্পন্সর / অ্যাড স্লট</CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 shrink-0"
+              onClick={() => setAdBlockOpen(true)}
+            >
+              <Users className="h-4 w-4" />
+              রিসেলার ব্লক ম্যানেজ
+              {adBlockedIds.length > 0 && (
+                <span className="ml-1 bg-destructive text-destructive-foreground rounded-full text-xs px-1.5 py-0.5 leading-none">{adBlockedIds.length}</span>
+              )}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -609,6 +648,90 @@ const SiteSettings = () => {
           </Button>
         </CardContent>
       </Card>
+      {/* Ad block reseller management dialog */}
+      <Dialog open={adBlockOpen} onOpenChange={setAdBlockOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ban className="h-5 w-5 text-destructive" /> অ্যাড ব্লক ম্যানেজমেন্ট
+            </DialogTitle>
+            <DialogDescription>
+              যে রিসেলারের ওয়েবসাইটে অ্যাড দেখাতে চান না তার পাশের ব্লক বাটনে ক্লিক করুন। সেভ করলে পরিবর্তন কার্যকর হবে।
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-2">
+            <Input
+              placeholder="রিসেলার খুঁজুন..."
+              value={adBlockSearch}
+              onChange={(e) => setAdBlockSearch(e.target.value)}
+              className="mb-3"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-1 pr-1">
+            {resellers
+              .filter((r) => {
+                const q = adBlockSearch.toLowerCase();
+                return !q || r.name?.toLowerCase().includes(q) || r.phone?.includes(q) || String(r.serialNumber ?? '').includes(q);
+              })
+              .map((r) => {
+                const isBlocked = adBlockedIds.includes(r.id);
+                return (
+                  <div
+                    key={r.id}
+                    className={`flex items-center justify-between gap-3 px-3 py-2 rounded-md border text-sm ${isBlocked ? 'border-destructive/40 bg-destructive/5' : 'border-border bg-muted/30'}`}
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">
+                        {r.serialNumber ? `#${r.serialNumber} — ` : ''}{r.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{r.phone}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={isBlocked ? 'destructive' : 'outline'}
+                      className="shrink-0 gap-1.5"
+                      onClick={() =>
+                        setAdBlockedIds((prev) =>
+                          isBlocked ? prev.filter((id) => id !== r.id) : [...prev, r.id]
+                        )
+                      }
+                    >
+                      {isBlocked ? (
+                        <><Ban className="h-3.5 w-3.5" /> ব্লক করা</>
+                      ) : (
+                        <><CheckCircle2 className="h-3.5 w-3.5" /> অ্যাক্টিভ</>
+                      )}
+                    </Button>
+                  </div>
+                );
+              })}
+            {resellers.length === 0 && (
+              <p className="text-center text-muted-foreground text-sm py-8">কোনো রিসেলার নেই</p>
+            )}
+          </div>
+
+          <div className="pt-3 border-t flex justify-between items-center gap-3 mt-2">
+            <p className="text-xs text-muted-foreground">
+              {adBlockedIds.length > 0 ? `${adBlockedIds.length} জন ব্লক করা` : 'কেউ ব্লক করা নেই'}
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setAdBlockOpen(false)}>বাতিল</Button>
+              <Button
+                className="gap-2"
+                onClick={() => {
+                  settings.updateSettings({ adBlockedResellers: adBlockedIds });
+                  toast.success('অ্যাড ব্লক সেটিংস সেভ হয়েছে!');
+                  setAdBlockOpen(false);
+                }}
+              >
+                <Save className="h-4 w-4" /> সেভ করুন
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

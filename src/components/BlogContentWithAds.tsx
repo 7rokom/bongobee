@@ -2,6 +2,7 @@ import { useMemo, useEffect, useRef, useState, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useSiteSettingsStore } from '@/stores/useSiteSettingsStore';
 import { isInternalUser } from '@/lib/is-internal-user';
+import { useResellerRef } from '@/contexts/ResellerRefContext';
 
 interface Props {
   content: string;
@@ -12,16 +13,19 @@ interface Props {
 const VIDEO_MARKER = '__BLOG_VIDEO_SLOT__';
 
 const BlogContentWithAds = ({ content, videoSlot }: Props) => {
-  const { adsenseCode } = useSiteSettingsStore();
+  const { adsenseCode, adBlockedResellers } = useSiteSettingsStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [videoMount, setVideoMount] = useState<HTMLElement | null>(null);
   const internal = isInternalUser();
+  const resellerId = useResellerRef();
+  const blocked = !!resellerId && (adBlockedResellers ?? []).includes(resellerId);
+  const noAd = internal || blocked;
 
   const htmlWithAds = useMemo(() => {
     if (!content) return content;
 
     const adPlaceholder =
-      adsenseCode && !internal ? `<div class="adsense-slot my-4">${adsenseCode}</div>` : '';
+      adsenseCode && !noAd ? `<div class="adsense-slot my-4">${adsenseCode}</div>` : '';
     const videoPlaceholder = videoSlot
       ? `<div class="blog-video-slot my-6" data-marker="${VIDEO_MARKER}"></div>`
       : '';
@@ -49,12 +53,12 @@ const BlogContentWithAds = ({ content, videoSlot }: Props) => {
 
     if (adPlaceholder) result.push(adPlaceholder);
     return result.join('');
-  }, [content, adsenseCode, internal, videoSlot]);
+  }, [content, adsenseCode, noAd, videoSlot]);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    if (adsenseCode && !internal) {
+    if (adsenseCode && !noAd) {
       const slots = containerRef.current.querySelectorAll('.adsense-slot');
       slots.forEach((slot) => {
         const scripts = slot.querySelectorAll('script');
@@ -73,7 +77,7 @@ const BlogContentWithAds = ({ content, videoSlot }: Props) => {
       `[data-marker="${VIDEO_MARKER}"]`
     );
     setVideoMount(node || null);
-  }, [htmlWithAds, adsenseCode, internal]);
+  }, [htmlWithAds, adsenseCode, noAd]);
 
   return (
     <>
