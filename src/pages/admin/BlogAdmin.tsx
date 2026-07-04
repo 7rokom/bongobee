@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, Edit2, Trash2, ArrowLeft, Upload, Link, X, Image, Save, Eye, FileText, StickyNote, ExternalLink, Copy, Download, Youtube } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, ArrowLeft, Upload, Link, X, Image, Save, Eye, FileText, StickyNote, ExternalLink, Copy, Download, Youtube, Link2, Check } from 'lucide-react';
 import { extractYouTubeId, getYouTubeThumbnail, resolveVideo } from '@/lib/youtube';
 import ImportExportButtons from '@/components/admin/ImportExportButtons';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -59,8 +59,18 @@ const BlogAdmin = () => {
   const [videoUrl, setVideoUrl] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<BlogPost | null>(null);
   const [deleteStep, setDeleteStep] = useState(0); // 0=closed, 1=first, 2=second
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const featuredInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCopy = (post: BlogPost) => {
+    const url = `${window.location.origin}${post.type === 'post' ? `/blog/${post.slug}/` : `/page/${post.slug}/`}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(post.id);
+      toast.success('লিংক কপি হয়েছে');
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
 
   const openDelete = (post: BlogPost) => { setDeleteConfirm(post); setDeleteStep(1); };
   const handleDeleteStep = async () => {
@@ -421,66 +431,84 @@ const BlogAdmin = () => {
         <Input placeholder={`${activeTab === 'post' ? 'পোস্ট' : 'পেজ'} খুঁজুন...`} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 
-      <div className="grid gap-4">
-        {filteredPosts.length === 0 ? (
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-8 text-center text-muted-foreground">
-              কোনো {activeTab === 'post' ? 'পোস্ট' : 'পেজ'} নেই
-            </CardContent>
-          </Card>
-        ) : filteredPosts.map((post) => (
-          <Card key={post.id} className="border-0 shadow-sm">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex gap-3 sm:gap-4">
-                {post.image && (
-                  <img src={post.image} alt={post.title} className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="font-semibold text-foreground line-clamp-1 text-sm sm:text-base">{post.title}</h3>
-                    <Badge variant={post.status === 'published' ? 'default' : 'secondary'} className="text-[10px] shrink-0">
-                      {post.status === 'published' ? 'পাবলিশড' : 'ড্রাফট'}
-                    </Badge>
+      {filteredPosts.length === 0 ? (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-8 text-center text-muted-foreground">
+            কোনো {activeTab === 'post' ? 'পোস্ট' : 'পেজ'} নেই
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filteredPosts.map((post) => {
+            const url = post.status === 'published'
+              ? `${window.location.origin}${post.type === 'post' ? `/blog/${post.slug}/` : `/page/${post.slug}/`}`
+              : null;
+            return (
+              <Card key={post.id} className="overflow-hidden">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex gap-3">
+                    {post.image
+                      ? <img src={post.image} alt={post.title} className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-md shrink-0" />
+                      : <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-md shrink-0 bg-muted flex items-center justify-center">
+                          {post.type === 'post'
+                            ? <StickyNote className="h-8 w-8 text-muted-foreground" />
+                            : <FileText className="h-8 w-8 text-muted-foreground" />}
+                        </div>
+                    }
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold text-sm sm:text-base line-clamp-2">{post.title}</h3>
+                        <Badge
+                          variant={post.status === 'published' ? 'default' : 'secondary'}
+                          className="text-[10px] shrink-0"
+                        >
+                          {post.status === 'published' ? 'পাবলিশড' : 'ড্রাফট'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
+                        <span>{post.date}</span>
+                        {post.category && <span className="px-1.5 py-0.5 rounded-full bg-muted">{post.category}</span>}
+                      </div>
+                      {url && (
+                        <div className="mt-2 bg-muted/50 rounded px-2 py-1.5 text-[11px] sm:text-xs break-all font-mono text-muted-foreground">
+                          {url}
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {url && (
+                          <Button size="sm" variant="default" onClick={() => handleCopy(post)} className="h-8 text-xs">
+                            {copiedId === post.id
+                              ? <><Check className="h-3.5 w-3.5 mr-1" />কপি হয়েছে</>
+                              : <><Link2 className="h-3.5 w-3.5 mr-1" />লিংক কপি</>}
+                          </Button>
+                        )}
+                        {url && (
+                          <Button size="sm" variant="outline" asChild className="h-8 text-xs">
+                            <a href={url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-3.5 w-3.5 mr-1" />ভিউ
+                            </a>
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline" onClick={() => openEditEditor(post)} className="h-8 text-xs">
+                          <Edit2 className="h-3.5 w-3.5 mr-1" />এডিট
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openDelete(post)}
+                          className="h-8 text-xs text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1" />ডিলিট
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                    <span>{post.date}</span>
-                    {post.category && <span className="px-2 py-0.5 rounded-full bg-muted">{post.category}</span>}
-                  </div>
-                </div>
-                <div className="flex items-start gap-1 shrink-0 flex-wrap">
-                  {post.status === 'published' && (
-                    <>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" title="ভিউ করুন"
-                        onClick={() => navigate(post.type === 'post' ? `/blog/${post.slug}/` : `/page/${post.slug}/`)}>
-                        <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" title="লিংক কপি"
-                        onClick={() => {
-                          const url = `${window.location.origin}${post.type === 'post' ? `/blog/${post.slug}/` : `/page/${post.slug}/`}`;
-                          navigator.clipboard.writeText(url);
-                          toast.success('লিংক কপি হয়েছে');
-                        }}>
-                        <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </Button>
-                    </>
-                  )}
-                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => openEditEditor(post)}>
-                    <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive"
-                    onClick={() => openDelete(post)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       <Dialog open={!!deleteConfirm} onOpenChange={(o) => { if (!o) { setDeleteConfirm(null); setDeleteStep(0); } }}>
         <DialogContent>
