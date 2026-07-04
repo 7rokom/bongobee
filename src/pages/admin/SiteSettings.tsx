@@ -9,7 +9,7 @@ import { useCategoryStore } from '@/stores/useCategoryStore';
 import { useResellerStore } from '@/stores/useResellerStore';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Plus, Trash2, Save, Palette, Globe, Phone, LayoutDashboard, Menu, FileText, Search as SearchIcon, DollarSign, Users, Ban, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Save, Palette, Phone, LayoutDashboard, Menu, FileText, DollarSign, Users, Ban, CheckCircle2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 const SiteSettings = () => {
@@ -114,7 +114,7 @@ const SiteSettings = () => {
   useEffect(() => { fetchResellers(); }, []);
 
   const handleSaveBranding = () => {
-    settings.updateSettings({ siteName, tagline, primaryColor, secondaryColor, logoUrl, faviconUrl, footerCredit });
+    settings.updateSettings({ siteName, tagline, primaryColor, secondaryColor, logoUrl, faviconUrl, footerCredit, siteMetaDescription });
     // Apply colors dynamically
     document.documentElement.style.setProperty('--primary', primaryColor);
     document.documentElement.style.setProperty('--ring', primaryColor);
@@ -240,6 +240,16 @@ const SiteSettings = () => {
               </div>
               <p className="text-xs text-muted-foreground mt-1">HSL ফরম্যাট: H S% L%</p>
             </div>
+          </div>
+          <div>
+            <Label>সাইট মেটা ডিস্ক্রিপশন</Label>
+            <Input
+              value={siteMetaDescription}
+              onChange={(e) => setSiteMetaDescription(e.target.value)}
+              className="mt-1"
+              placeholder="সার্চ ইঞ্জিনে আপনার সাইটের বিবরণ"
+            />
+            <p className="text-xs text-muted-foreground mt-1">এটি Google সার্চ রেজাল্টে আপনার সাইটের নামের নিচে দেখাবে</p>
           </div>
           <div>
             <Label>গ্রাডিয়েন্ট প্রিভিউ (মেইন → সেকেন্ডারি)</Label>
@@ -523,42 +533,6 @@ const SiteSettings = () => {
               <Save className="h-4 w-4" /> সেভ করুন
             </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* SEO / Site Meta */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2"><SearchIcon className="h-5 w-5" /> SEO ও সাইটম্যাপ</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>সাইট মেটা ডিস্ক্রিপশন</Label>
-            <Input
-              value={siteMetaDescription}
-              onChange={(e) => setSiteMetaDescription(e.target.value)}
-              className="mt-1"
-              placeholder="সার্চ ইঞ্জিনে আপনার সাইটের বিবরণ"
-            />
-            <p className="text-xs text-muted-foreground mt-1">এটি Google সার্চ রেজাল্টে আপনার সাইটের নামের নিচে দেখাবে</p>
-          </div>
-          <div>
-            <Label>Google Search Console ভেরিফিকেশন কোড</Label>
-            <Input
-              value={googleVerificationCode}
-              onChange={(e) => setGoogleVerificationCode(e.target.value)}
-              className="mt-1"
-              placeholder="Google ভেরিফিকেশন কোড (meta tag content value)"
-            />
-            <p className="text-xs text-muted-foreground mt-1">Google Search Console থেকে পাওয়া ভেরিফিকেশন কোড এখানে পেস্ট করুন</p>
-          </div>
-          <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
-            <p><strong>Sitemap URL:</strong> <a href="https://bongobe.com/sitemap.xml" target="_blank" rel="noopener" className="text-primary underline">https://bongobe.com/sitemap.xml</a></p>
-            <p className="mt-1"><strong>Robots.txt:</strong> <a href="https://bongobe.com/robots.txt" target="_blank" rel="noopener" className="text-primary underline">https://bongobe.com/robots.txt</a></p>
-          </div>
-          <Button onClick={() => { settings.updateSettings({ siteMetaDescription, googleVerificationCode }); toast.success('SEO সেটিংস সেভ হয়েছে!'); }} className="gap-2">
-            <Save className="h-4 w-4" /> সেভ করুন
-          </Button>
         </CardContent>
       </Card>
 
