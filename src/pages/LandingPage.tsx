@@ -21,7 +21,7 @@ import { validatePhone, validateName } from '@/lib/order-validation';
 import ValidationPopup from '@/components/ValidationPopup';
 import { generateFingerprint } from '@/lib/fingerprint';
 import { trackPurchase, trackPageView, trackInitiateCheckout } from '@/lib/dataLayer';
-import { checkFraud, checkDeviceBlocked } from '@/lib/fraud-check';
+import { checkFraud, checkHasPreviousOrder } from '@/lib/fraud-check';
 import { getAdjustedPurchaseValue } from '@/lib/value-multiplier';
 import PostOrderPopup from '@/components/PostOrderPopup';
 import { useSiteSettingsStore } from '@/stores/useSiteSettingsStore';
@@ -250,22 +250,6 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
       return;
     }
 
-    const deviceResult = await checkDeviceBlocked(customerFingerprint || undefined, phone, customerIp || undefined);
-    if (deviceResult.blocked) {
-      await addIncomplete({
-        name, phone, address,
-        items: [{ title: product.title, quantity, price: currentPrice, image: product.images?.[0] || '' }],
-        totalPrice: subtotal, deliveryCharge,
-        deliveryZone: delivery === '70' ? 'ঢাকার মধ্যে' : delivery === '100' ? 'ঢাকার আশেপাশে' : 'ঢাকার বাইরে',
-        grandTotal: total, type: 'blocked',
-        blockReason: `এনার একটি অর্ডার [${deviceResult.status}] স্ট্যাটাসে আছে`,
-        customerIp: customerIp || undefined, customerFingerprint: customerFingerprint || undefined,
-        note: orderNote.trim() || undefined,
-      });
-      setValidationMsg(`প্রিয় গ্রাহক ❤️\n\nআপনি আগেও একটি অর্ডার করেছেন। কিন্তু সেই অর্ডারটি এখন ${deviceResult.status} স্ট্যাটাসে আছে। তাই এখন নতুন কোন অর্ডার করতে পারবেন না। দয়া করে ২৪ ঘন্টা অপেক্ষা করুন। আমরা আপনার নাম্বারে কল করবো। ধন্যবাদ!`);
-      return;
-    }
-
     let fraudFailed = false;
     let fraudBlockNote = '';
     let fraudResult: any = null;
@@ -285,6 +269,9 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
       } catch { /* non-fatal */ }
     }
     setFraudChecking(false);
+
+    // Check if customer has any previous order (any status) → redirect to fake thank-you (no pixels)
+    const hasPrevious = await checkHasPreviousOrder(customerFingerprint || undefined, phone, customerIp || undefined);
 
     const variations: Record<string, string> = {};
     if (selectedColor) variations['কালার'] = selectedColor;
@@ -357,7 +344,7 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
         });
         orderSubmitted.current = true;
         removeByPhone(phone);
-        if (fraudFailed) { navigate(fakeThankYouPath, { state: { orderId: roId } }); return; }
+        if (fraudFailed || hasPrevious) { navigate(fakeThankYouPath, { state: { orderId: roId } }); return; }
         const purchasePayload = buildPurchasePayload(roId);
         const popupEnabled = useFraudSettingsStore.getState().postOrderPopupEnabled;
         if (popupEnabled) { setPendingOrderId(roId); setPendingPurchasePayload(purchasePayload); setShowPostOrderPopup(true); }
@@ -386,7 +373,7 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
 
     orderSubmitted.current = true;
     removeByPhone(phone);
-    if (fraudFailed) { navigate('/order-confirmed', { state: { orderId: id } }); return; }
+    if (fraudFailed || hasPrevious) { navigate(fakeThankYouPath, { state: { orderId: id } }); return; }
     const purchasePayload = buildPurchasePayload(id);
     const popupEnabled = useFraudSettingsStore.getState().postOrderPopupEnabled;
     if (popupEnabled) { setPendingOrderId(id); setPendingPurchasePayload(purchasePayload); setShowPostOrderPopup(true); }

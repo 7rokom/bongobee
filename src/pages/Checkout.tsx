@@ -19,7 +19,7 @@ import { validatePhone, validateName } from "@/lib/order-validation";
 import ValidationPopup from "@/components/ValidationPopup";
 import { generateFingerprint } from "@/lib/fingerprint";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/dataLayer";
-import { checkFraud, checkDeviceBlocked, type FraudCheckResult } from "@/lib/fraud-check";
+import { checkFraud, checkHasPreviousOrder, type FraudCheckResult } from "@/lib/fraud-check";
 import { getAdjustedPurchaseValue } from "@/lib/value-multiplier";
 import PostOrderPopup from "@/components/PostOrderPopup";
 import PageAudioPlayer from "@/components/PageAudioPlayer";
@@ -184,25 +184,6 @@ const Checkout = () => {
       return;
     }
 
-    // Check device blocked by fingerprint, normalizedPhone, or IP (all non-ডেলিভারড statuses)
-    const deviceResult = await checkDeviceBlocked(customerFingerprint || undefined, normalizedPhone, customerIp || undefined);
-
-    if (deviceResult.blocked) {
-      // Don't create order, save to incomplete with note
-      await addIncomplete({
-        name, phone: normalizedPhone, address,
-        items: items.map((i) => ({ title: i.product.title, quantity: i.quantity, price: i.product.price, image: i.product.images[0] || "", variations: i.selectedVariations && Object.keys(i.selectedVariations).length > 0 ? i.selectedVariations : undefined })),
-        totalPrice: subtotal, deliveryCharge,
-        deliveryZone: delivery === "70" ? "ঢাকার মধ্যে" : delivery === "100" ? "ঢাকার আশেপাশে" : "ঢাকার বাইরে",
-        grandTotal: total, type: "blocked",
-        blockReason: `এনার একটি অর্ডার [${deviceResult.status}] স্ট্যাটাসে আছে`,
-        customerIp: customerIp || undefined, customerFingerprint: customerFingerprint || undefined,
-        note: orderNote.trim() || undefined,
-      });
-      setValidationMsg(`প্রিয় গ্রাহক ❤️\n\nআপনি আগেও একটি অর্ডার করেছেন। কিন্তু সেই অর্ডারটি এখন ${deviceResult.status} স্ট্যাটাসে আছে। তাই এখন নতুন কোন অর্ডার করতে পারবেন না। দয়া করে ২৪ ঘন্টা অপেক্ষা করুন। আমরা আপনার নাম্বারে কল করবো। ধন্যবাদ!`);
-      return;
-    }
-
     // Fraud check (courier ratio) — fetch latest settings to avoid stale/default values
     let fraudFailed = false;
     let fraudBlockNote = '';
@@ -229,6 +210,8 @@ const Checkout = () => {
     }
     setFraudChecking(false);
 
+    // Check if customer has any previous order (any status) → redirect to fake thank-you (no pixels)
+    const hasPrevious = await checkHasPreviousOrder(customerFingerprint || undefined, normalizedPhone, customerIp || undefined);
 
     // If reseller referral: create reseller order via public endpoint (no auth needed)
     if (resellerRef) {
@@ -325,7 +308,7 @@ const Checkout = () => {
           fetchAndCacheCourierRatio(normalizedPhone).catch(() => {});
         } catch { /* non-fatal */ }
 
-        if (fraudFailed) {
+        if (fraudFailed || hasPrevious) {
           navigate(fakeThankYouPath, { state: { orderId: roId } });
           return;
         }
@@ -374,7 +357,7 @@ const Checkout = () => {
     // Mark that this user has placed an order — used to suppress exit-intent popup
     try { localStorage.setItem('userPurchased', '1'); } catch { /* ignore */ }
 
-    if (fraudFailed) {
+    if (fraudFailed || hasPrevious) {
       navigate(fakeThankYouPath, { state: { orderId: id } });
       return;
     }

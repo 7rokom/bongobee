@@ -132,6 +132,30 @@ export interface DeviceBlockResult {
 }
 
 /**
+ * Check if a customer has ANY previous order (any status, including ডেলিভারড).
+ * Returns true for repeat buyers — used to redirect to fake thank-you page.
+ */
+export const checkHasPreviousOrder = async (
+  fingerprint?: string,
+  phone?: string,
+  ip?: string,
+): Promise<boolean> => {
+  try {
+    if (!fingerprint && !phone && !ip) return false;
+    const { normalizePhone } = await import('@/lib/order-validation');
+    const normalizedPhone = phone ? normalizePhone(phone) : '';
+    const res = await api.post('/public/has-previous-order', {
+      fingerprint: fingerprint || null,
+      phone: normalizedPhone || null,
+      ip: ip || null,
+    });
+    return !!res?.has_previous;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Check if a customer has any order in blocking statuses by fingerprint, phone, or IP.
  * All statuses except ডেলিভারড are blocking.
  */

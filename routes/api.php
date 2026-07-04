@@ -70,6 +70,7 @@ Route::prefix('public')->group(function () {
     Route::post('/courier-ratio', [FrontendDataController::class, 'saveCourierRatio']);
     Route::post('/courier-check', [FrontendDataController::class, 'courierCheck']);
     Route::post('/device-check', [FrontendDataController::class, 'deviceCheck']);
+    Route::post('/has-previous-order', [FrontendDataController::class, 'hasPreviousOrder']);
     Route::post('/incomplete-orders', [FrontendDataController::class, 'storeIncompleteOrder']);
     Route::post('/checkout-order', [FrontendOrderController::class, 'checkout']);
     Route::post('/confirm-order', [FrontendOrderController::class, 'confirmOrder']);

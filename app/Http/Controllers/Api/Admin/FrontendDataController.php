@@ -84,6 +84,31 @@ class FrontendDataController extends Controller
         }
     }
 
+    // Check if a customer has ANY previous order (any status) — used to suppress pixel events for repeat buyers.
+    public function hasPreviousOrder(Request $request): JsonResponse
+    {
+        $fp = $request->input('fingerprint');
+        $phone = $request->input('phone');
+        $ip = $request->input('ip');
+        if (!$fp && !$phone && !$ip) return response()->json(['has_previous' => false]);
+
+        $found = \App\Models\Order::where(function ($q) use ($fp, $phone, $ip) {
+            if ($phone) $q->orWhere('phone', $phone)->orWhere('customer_phone', $phone);
+            if ($fp) $q->orWhere('customer_fingerprint', $fp);
+            if ($ip) $q->orWhere('customer_ip', $ip);
+        })->exists();
+
+        if (!$found) {
+            $found = \App\Models\ResellerOrder::where(function ($q) use ($fp, $phone, $ip) {
+                if ($phone) $q->orWhere('customer_phone', $phone);
+                if ($fp) $q->orWhere('customer_fingerprint', $fp);
+                if ($ip) $q->orWhere('customer_ip', $ip);
+            })->exists();
+        }
+
+        return response()->json(['has_previous' => $found]);
+    }
+
     // Device/phone/ip active-order check (fraud) across orders + reseller_orders.
     public function deviceCheck(Request $request): JsonResponse
     {
