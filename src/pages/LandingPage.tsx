@@ -338,23 +338,40 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
         const PACKAGING_CHARGE = 10;
         const codCharge = Math.ceil(totalSellingPrice / 100);
         const totalProfit = totalSellingPrice - totalResellerCost - deliveryCharge - PACKAGING_CHARGE - codCharge;
-        const roId = await useResellerStore.getState().getNextResellerOrderId();
-        await addResellerOrder({
-          id: roId, resellerId: reseller.id, resellerName: reseller.name,
-          customerName: name, customerPhone: phone, customerAddress: address,
-          items: [resellerItem], deliveryCharge, packagingCharge: PACKAGING_CHARGE,
-          codCharge, totalSellingPrice, totalResellerCost, totalProfit,
-          status: 'পেন্ডিং', date: new Date().toISOString(),
-          customerIp: customerIp || undefined, customerFingerprint: customerFingerprint || undefined,
-          source: (await import('@/lib/order-source')).getOrderSource(),
-          notes: [
-            ...(orderNote.trim() ? [`📝 কাস্টমার নোট: ${orderNote.trim()}`] : []),
-            ...(fraudFailed ? [`⚠️ ${fraudBlockNote}`] : []),
-          ].length > 0 ? [
-            ...(orderNote.trim() ? [`📝 কাস্টমার নোট: ${orderNote.trim()}`] : []),
-            ...(fraudFailed ? [`⚠️ ${fraudBlockNote}`] : []),
-          ] : undefined,
-        });
+        const source = (await import('@/lib/order-source')).getOrderSource();
+        const orderNotes = [
+          ...(orderNote.trim() ? [`📝 কাস্টমার নোট: ${orderNote.trim()}`] : []),
+          ...(fraudFailed ? [`⚠️ ${fraudBlockNote}`] : []),
+        ];
+        let roId: string;
+        if (resellerCtx?.noUrlPrefix) {
+          // Custom domain: /rs/* routes require auth — use the public endpoint instead
+          const { api: apiClient } = await import('@/lib/api');
+          const created = await apiClient.post('/public/reseller-order', {
+            reseller_id: reseller.id,
+            customer_name: name, customer_phone: phone, customer_address: address,
+            items: [resellerItem], delivery_charge: deliveryCharge, packaging_charge: PACKAGING_CHARGE,
+            cod_charge: codCharge, total_selling_price: totalSellingPrice,
+            total_reseller_cost: totalResellerCost, total_profit: totalProfit,
+            status: 'পেন্ডিং', date: new Date().toISOString(),
+            notes: orderNotes.length > 0 ? orderNotes : undefined,
+            customer_ip: customerIp || null, customer_fingerprint: customerFingerprint || null,
+            source,
+          });
+          roId = created?.id || ('#RO' + Date.now());
+        } else {
+          roId = await useResellerStore.getState().getNextResellerOrderId();
+          await addResellerOrder({
+            id: roId, resellerId: reseller.id, resellerName: reseller.name,
+            customerName: name, customerPhone: phone, customerAddress: address,
+            items: [resellerItem], deliveryCharge, packagingCharge: PACKAGING_CHARGE,
+            codCharge, totalSellingPrice, totalResellerCost, totalProfit,
+            status: 'পেন্ডিং', date: new Date().toISOString(),
+            customerIp: customerIp || undefined, customerFingerprint: customerFingerprint || undefined,
+            source,
+            notes: orderNotes.length > 0 ? orderNotes : undefined,
+          });
+        }
         orderSubmitted.current = true;
         removeByPhone(phone);
         setOrderCooldown();
