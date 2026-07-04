@@ -24,7 +24,7 @@ export interface FraudSettings {
   postOrderCallSuccessMessage: string;
 }
 
-const DEFAULT_COOLDOWN_MESSAGE = "প্রিয় গ্রাহক! আপনি ইতিমধ্যে ১বার অর্ডার করেছেন। আমাদের ওয়েবসাইটে প্রতি ২ ঘন্টায় ১ বারের বেশি অর্ডার করা যায় না। ধন্যবাদ!";
+const DEFAULT_COOLDOWN_MESSAGE = "প্রিয় গ্রাহক!\nআপনি ইতিমধ্যে একবার অর্ডার করেছেন। আবার নতুন অর্ডার করতে ১০ মিনিট অপেক্ষা করুন।";
 const DEFAULT_NO_DATA_MESSAGE = "প্রিয় গ্রাহক! আপনি আগে কখনো অনলাইন থেকে অর্ডার করেন নি। তাই সরাসরি আপনার অর্ডার গ্রহণ করা সম্ভব হচ্ছে না। ২৪ ঘন্টার মধ্যে আপনার অর্ডার গ্রহণ করার জন্য আমাদের প্রতিনিধি আপনাকে কল করবে। ধন্যবাদ!";
 const DEFAULT_LOW_RATIO_MESSAGE = "প্রিয় গ্রাহক! আপনার প্রোডাক্ট রিভিস রেশিও পর্যাপ্ত না। তাই সরাসরি আপনার অর্ডার গ্রহণ করা সম্ভব হচ্ছে না। ২৪ ঘন্টার মধ্যে আপনার অর্ডার গ্রহণ করার জন্য আমাদের প্রতিনিধি আপনাকে কল করবে। ধন্যবাদ!";
 
@@ -86,7 +86,7 @@ const scheduleFlush = () => {
 export const useFraudSettingsStore = create<FraudSettingsStore>()((set) => ({
   enabled: false, minDeliveryPercent: 50, blockOnNoData: true,
   apiProvider: 'bdcourier', customApiUrl: '', customApiKey: '', bdcourierApiKey: '',
-  cooldownEnabled: true, cooldownMinutes: 120,
+  cooldownEnabled: true, cooldownMinutes: 10,
   cooldownMessage: DEFAULT_COOLDOWN_MESSAGE,
   fraudPopupEnabled: true,
   noDataMessage: DEFAULT_NO_DATA_MESSAGE,

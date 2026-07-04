@@ -20,6 +20,7 @@ import ValidationPopup from "@/components/ValidationPopup";
 import { generateFingerprint } from "@/lib/fingerprint";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/dataLayer";
 import { checkFraud, checkHasPreviousOrder, type FraudCheckResult } from "@/lib/fraud-check";
+import { checkServerCooldown, setOrderCooldown, getCooldownMessage } from "@/lib/order-cooldown";
 import { getAdjustedPurchaseValue } from "@/lib/value-multiplier";
 import PostOrderPopup from "@/components/PostOrderPopup";
 import PageAudioPlayer from "@/components/PageAudioPlayer";
@@ -176,6 +177,13 @@ const Checkout = () => {
     // Shadow `phone` for the rest of this function via re-binding through closure trick:
     // we use normalizedPhone explicitly below.
 
+    // Check 10-minute cooldown — prevents duplicate orders from confused customers
+    const inCooldown = await checkServerCooldown(normalizedPhone, customerIp || undefined, customerFingerprint || undefined);
+    if (inCooldown) {
+      setValidationMsg(getCooldownMessage());
+      return;
+    }
+
     // Check if blocked in blocked_customers table (manually blocked)
     const isBlocked = await checkBlockedRemote(normalizedPhone, customerIp || undefined, customerFingerprint || undefined);
     if (isBlocked) {
@@ -302,6 +310,7 @@ const Checkout = () => {
         orderSubmitted.current = true;
         removeByPhone(normalizedPhone);
         clearCart();
+        setOrderCooldown();
 
         try {
           const { fetchAndCacheCourierRatio } = await import('@/lib/fraud-check');
@@ -351,8 +360,8 @@ const Checkout = () => {
 
     orderSubmitted.current = true;
     removeByPhone(normalizedPhone);
-
     clearCart();
+    setOrderCooldown();
 
     // Mark that this user has placed an order — used to suppress exit-intent popup
     try { localStorage.setItem('userPurchased', '1'); } catch { /* ignore */ }

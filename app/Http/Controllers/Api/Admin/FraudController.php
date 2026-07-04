@@ -93,17 +93,27 @@ class FraudController extends Controller
         $phone = $request->input('phone');
         $ip = $request->input('ip');
         $fingerprint = $request->input('fingerprint');
-        $minutes = (int) ($request->input('minutes') ?: 120);
+        $minutes = (int) ($request->input('minutes') ?: 10);
         if (!$phone && !$ip && !$fingerprint) return response()->json(['active' => false]);
 
         $cutoff = now()->subMinutes($minutes);
         $active = \App\Models\Order::where('created_at', '>=', $cutoff)
             ->where(function ($q) use ($phone, $ip, $fingerprint) {
-                if ($phone) $q->orWhere('phone', $phone);
+                if ($phone) $q->orWhere('phone', $phone)->orWhere('customer_phone', $phone);
                 if ($ip) $q->orWhere('customer_ip', $ip);
                 if ($fingerprint) $q->orWhere('customer_fingerprint', $fingerprint);
             })
             ->exists();
+
+        if (!$active) {
+            $active = \App\Models\ResellerOrder::where('created_at', '>=', $cutoff)
+                ->where(function ($q) use ($phone, $ip, $fingerprint) {
+                    if ($phone) $q->orWhere('customer_phone', $phone);
+                    if ($ip) $q->orWhere('customer_ip', $ip);
+                    if ($fingerprint) $q->orWhere('customer_fingerprint', $fingerprint);
+                })
+                ->exists();
+        }
 
         return response()->json(['active' => $active]);
     }

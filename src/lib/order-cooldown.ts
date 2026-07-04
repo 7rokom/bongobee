@@ -17,7 +17,7 @@ export function isOrderCooldownActive(): boolean {
     if (!state.cooldownEnabled) return false;
     const last = localStorage.getItem(COOLDOWN_KEY);
     if (!last) return false;
-    const cooldownMs = (state.cooldownMinutes || 120) * 60 * 1000;
+    const cooldownMs = (state.cooldownMinutes || 10) * 60 * 1000;
     return Date.now() - Number(last) < cooldownMs;
   } catch {
     return false;
@@ -40,7 +40,7 @@ export async function checkServerCooldown(
     const state = useFraudSettingsStore.getState();
     if (!state.cooldownEnabled) return false;
 
-    const cooldownMinutes = state.cooldownMinutes || 120;
+    const cooldownMinutes = state.cooldownMinutes || 10;
 
     // Normalize phone: remove spaces, dashes
     const normalizedPhone = phone.replace(/[\s\-]/g, '');

@@ -22,6 +22,7 @@ import ValidationPopup from '@/components/ValidationPopup';
 import { generateFingerprint } from '@/lib/fingerprint';
 import { trackPurchase, trackPageView, trackInitiateCheckout } from '@/lib/dataLayer';
 import { checkFraud, checkHasPreviousOrder } from '@/lib/fraud-check';
+import { checkServerCooldown, setOrderCooldown, getCooldownMessage } from '@/lib/order-cooldown';
 import { getAdjustedPurchaseValue } from '@/lib/value-multiplier';
 import PostOrderPopup from '@/components/PostOrderPopup';
 import { useSiteSettingsStore } from '@/stores/useSiteSettingsStore';
@@ -236,6 +237,13 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
     const phoneErr = validatePhone(phone);
     if (phoneErr) { setValidationMsg(phoneErr); return; }
 
+    // Check 10-minute cooldown — prevents duplicate orders from confused customers
+    const inCooldown = await checkServerCooldown(phone, customerIp || undefined, customerFingerprint || undefined);
+    if (inCooldown) {
+      setValidationMsg(getCooldownMessage());
+      return;
+    }
+
     const isBlocked = await checkBlockedRemote(phone, customerIp || undefined, customerFingerprint || undefined);
     if (isBlocked) {
       await addIncomplete({
@@ -344,6 +352,7 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
         });
         orderSubmitted.current = true;
         removeByPhone(phone);
+        setOrderCooldown();
         if (fraudFailed || hasPrevious) { navigate(fakeThankYouPath, { state: { orderId: roId } }); return; }
         const purchasePayload = buildPurchasePayload(roId);
         const popupEnabled = useFraudSettingsStore.getState().postOrderPopupEnabled;
@@ -373,6 +382,7 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
 
     orderSubmitted.current = true;
     removeByPhone(phone);
+    setOrderCooldown();
     if (fraudFailed || hasPrevious) { navigate(fakeThankYouPath, { state: { orderId: id } }); return; }
     const purchasePayload = buildPurchasePayload(id);
     const popupEnabled = useFraudSettingsStore.getState().postOrderPopupEnabled;

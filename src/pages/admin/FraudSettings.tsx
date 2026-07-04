@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
-import { ShieldAlert, Save, TestTube, Loader2, PackageCheck } from 'lucide-react';
+import { ShieldAlert, Save, TestTube, Loader2, PackageCheck, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFraudSettingsStore } from '@/stores/useFraudSettingsStore';
 import { api } from '@/lib/api';
@@ -132,6 +132,47 @@ const FraudSettings = () => {
                   <Label>মেসেজ</Label>
                   <Textarea value={settings.postOrderCallSuccessMessage} onChange={(e) => settings.updateSettings({ postOrderCallSuccessMessage: e.target.value })} rows={4} />
                 </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Order Cooldown Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2"><Timer className="h-5 w-5 text-blue-500" /> অর্ডার কুলডাউন সেটিংস</CardTitle>
+          <CardDescription>একই কাস্টমার ডুপ্লিকেট অর্ডার করা থেকে বিরত রাখুন</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-base font-medium">কুলডাউন সক্রিয় করুন</Label>
+              <p className="text-sm text-muted-foreground">অর্ডারের পর নির্দিষ্ট সময় নতুন অর্ডার ব্লক হবে</p>
+            </div>
+            <Switch checked={settings.cooldownEnabled} onCheckedChange={(v) => settings.updateSettings({ cooldownEnabled: v })} />
+          </div>
+          {settings.cooldownEnabled && (
+            <>
+              <div className="space-y-2">
+                <Label>কুলডাউন সময় (মিনিট)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={settings.cooldownMinutes}
+                  onChange={(e) => settings.updateSettings({ cooldownMinutes: Math.max(1, Number(e.target.value)) })}
+                  className="w-32"
+                />
+                <p className="text-xs text-muted-foreground">অর্ডারের পর এই সময়ের মধ্যে একই কাস্টমার আবার অর্ডার করতে পারবে না</p>
+              </div>
+              <div className="space-y-2">
+                <Label>কুলডাউন মেসেজ</Label>
+                <Textarea
+                  value={settings.cooldownMessage}
+                  onChange={(e) => settings.updateSettings({ cooldownMessage: e.target.value })}
+                  rows={3}
+                />
               </div>
             </>
           )}
