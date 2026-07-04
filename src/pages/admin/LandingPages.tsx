@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLandingPageStore, type LandingPage } from '@/stores/useLandingPageStore';
 import { useProductStore } from '@/stores/useProductStore';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, ExternalLink, Search, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Search, ChevronDown, ChevronUp, Eye, Link2, Check, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const generateSlug = (text: string) =>
@@ -32,8 +33,9 @@ const PLACEHOLDERS = [
 ];
 
 const LandingPages = () => {
-  const { pages, fetchPages, addPage, updatePage, deletePage } = useLandingPageStore();
+  const { pages, fetchPages, addPage, updatePage, deletePage, loading } = useLandingPageStore();
   const products = useProductStore((s) => s.products);
+
   const [showEditor, setShowEditor] = useState(false);
   const [editing, setEditing] = useState<LandingPage | null>(null);
   const [title, setTitle] = useState('');
@@ -48,6 +50,8 @@ const LandingPages = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<LandingPage | null>(null);
   const [deleteStep, setDeleteStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => { fetchPages(); }, []);
 
@@ -57,6 +61,12 @@ const LandingPages = () => {
     const q = productSearch.toLowerCase();
     return published.filter((p) => p.title.toLowerCase().includes(q));
   }, [products, productSearch]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return pages;
+    const q = search.toLowerCase();
+    return pages.filter((p) => p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q));
+  }, [pages, search]);
 
   const openNew = () => {
     setEditing(null);
@@ -151,67 +161,116 @@ const LandingPages = () => {
     }
   };
 
-  const getProductName = (id: string) => products.find((p) => p.id === id)?.title || 'N/A';
+  const handleCopy = (slug: string, id: string) => {
+    const link = `${window.location.origin}/lp/${slug}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiedId(id);
+      toast({ title: 'লিংক কপি হয়েছে!' });
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-2xl font-bold text-foreground">ল্যান্ডিং পেজ</h1>
-        <Button onClick={openNew} className="gap-2">
-          <Plus className="h-4 w-4" /> নতুন পেজ
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="সার্চ করুন..."
+              className="pl-8"
+            />
+          </div>
+          <Button onClick={openNew} className="gap-2 shrink-0">
+            <Plus className="h-4 w-4" /> নতুন পেজ
+          </Button>
+        </div>
       </div>
 
-      <div className="border rounded-[5px] overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>হেডিং</TableHead>
-              <TableHead>প্রডাক্ট</TableHead>
-              <TableHead>HTML</TableHead>
-              <TableHead>স্ট্যাটাস</TableHead>
-              <TableHead className="text-right">অ্যাকশন</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pages.map((page) => (
-              <TableRow key={page.id}>
-                <TableCell className="font-medium">{page.title}</TableCell>
-                <TableCell>{getProductName(page.productId)}</TableCell>
-                <TableCell>
-                  {page.customHtml
-                    ? <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700">কাস্টম HTML</span>
-                    : <span className="px-2 py-0.5 rounded text-xs font-bold bg-muted text-muted-foreground">অটো</span>
-                  }
-                </TableCell>
-                <TableCell>
-                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${page.status === 'published' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                    {page.status === 'published' ? 'পাবলিশড' : 'ড্রাফট'}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right space-x-1">
-                  <Button size="icon" variant="ghost" onClick={() => window.open(`/lp/${page.slug}`, '_blank')}>
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={() => openEdit(page)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => openDelete(page)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {pages.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
-                  কোনো ল্যান্ডিং পেজ নেই। নতুন তৈরি করুন।
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {loading && pages.length === 0 ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <Card>
+          <CardContent className="py-16 text-center text-muted-foreground">
+            কোনো ল্যান্ডিং পেজ নেই। নতুন তৈরি করুন।
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filtered.map((page) => {
+            const product = products.find((p) => p.id === page.productId);
+            const link = `${window.location.origin}/lp/${page.slug}`;
+            const img = product?.featuredImage || product?.images?.[0] || '/placeholder.svg';
+            return (
+              <Card key={page.id} className="overflow-hidden">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex gap-3">
+                    <img src={img} alt={page.title} className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-md shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold text-sm sm:text-base line-clamp-2">{page.title}</h3>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {page.customHtml && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 text-blue-600 border-blue-300">HTML</Badge>
+                          )}
+                          <Badge
+                            variant="secondary"
+                            className={`text-[10px] ${page.status === 'published' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}
+                          >
+                            {page.status === 'published' ? 'পাবলিশড' : 'ড্রাফট'}
+                          </Badge>
+                        </div>
+                      </div>
+                      {product && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          ৳{page.customPrice ?? product.price}
+                          {product.title && <span className="ml-1 opacity-70">— {product.title}</span>}
+                        </p>
+                      )}
+                      <div className="mt-2 bg-muted/50 rounded px-2 py-1.5 text-[11px] sm:text-xs break-all font-mono text-muted-foreground">
+                        {link}
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => handleCopy(page.slug, page.id)}
+                          className="h-8 text-xs"
+                        >
+                          {copiedId === page.id
+                            ? <><Check className="h-3.5 w-3.5 mr-1" />কপি হয়েছে</>
+                            : <><Link2 className="h-3.5 w-3.5 mr-1" />লিংক কপি</>}
+                        </Button>
+                        <Button size="sm" variant="outline" asChild className="h-8 text-xs">
+                          <a href={link} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-3.5 w-3.5 mr-1" />ভিউ
+                          </a>
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => openEdit(page)} className="h-8 text-xs">
+                          <Pencil className="h-3.5 w-3.5 mr-1" />এডিট
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openDelete(page)}
+                          className="h-8 text-xs text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1" />ডিলিট
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       <Dialog open={showEditor} onOpenChange={setShowEditor}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -243,7 +302,7 @@ const LandingPages = () => {
                   </button>
                 ))}
               </div>
-              {productId && <p className="text-xs text-primary mt-1">সিলেক্টেড: {getProductName(productId)}</p>}
+              {productId && <p className="text-xs text-primary mt-1">সিলেক্টেড: {products.find((p) => p.id === productId)?.title || 'N/A'}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -274,7 +333,6 @@ const LandingPages = () => {
               </Select>
             </div>
 
-            {/* Custom HTML editor */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <Label>কাস্টম Landing HTML (ঐচ্ছিক)</Label>
