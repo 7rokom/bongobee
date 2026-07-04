@@ -17,6 +17,7 @@ interface LandingPageStore {
   pages: LandingPage[];
   loading: boolean;
   fetchPages: () => Promise<void>;
+  fetchPublicPage: (slug: string) => Promise<void>;
   addPage: (page: Omit<LandingPage, 'createdAt'>) => Promise<void>;
   updatePage: (id: string, data: Partial<LandingPage>) => Promise<void>;
   deletePage: (id: string) => Promise<void>;
@@ -59,6 +60,19 @@ export const useLandingPageStore = create<LandingPageStore>((set, get) => ({
       set({ pages: rows.map(mapRow) });
     } catch { /* ignore */ }
     set({ loading: false });
+  },
+
+  fetchPublicPage: async (slug: string) => {
+    try {
+      const res = await api.get(`/public/landing-pages/${slug}`);
+      if (res?.id) {
+        const page = mapRow(res);
+        set((s) => {
+          const exists = s.pages.some((p) => p.slug === slug);
+          return { pages: exists ? s.pages.map((p) => (p.slug === slug ? page : p)) : [...s.pages, page] };
+        });
+      }
+    } catch { /* ignore — shows not-found UI */ }
   },
 
   addPage: async (page) => {

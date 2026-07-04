@@ -593,7 +593,7 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
 const LandingPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { pages, fetchPages, loading: lpLoading } = useLandingPageStore();
+  const { pages, fetchPages, fetchPublicPage, loading: lpLoading } = useLandingPageStore();
   const { products, loading: prodLoading } = useProductStore();
   const productPageTitleSize = useSiteSettingsStore((s) => s.productPageTitleSize);
   const productPageDescSize = useSiteSettingsStore((s) => s.productPageDescSize);
@@ -602,8 +602,11 @@ const LandingPage = () => {
   const product = page ? products.find((p) => p.id === page.productId) : undefined;
 
   useEffect(() => {
-    if (pages.length === 0) fetchPages();
-  }, []);
+    if (!slug) return;
+    if (!pages.find((p) => p.slug === slug)) {
+      fetchPublicPage(slug);
+    }
+  }, [slug]);
 
   const resellerRef = useResellerRef();
   const addResellerOrder = useResellerStore((s) => s.addResellerOrder);
