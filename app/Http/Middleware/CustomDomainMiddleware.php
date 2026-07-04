@@ -11,7 +11,16 @@ class CustomDomainMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $host    = $request->getHost();
+        $workerSecret   = env('CLOUDFLARE_WORKER_SECRET');
+        $xCustomDomain  = $request->header('X-Custom-Domain');
+
+        // Trust the custom domain header only when it arrives with the correct worker secret.
+        if ($xCustomDomain && $workerSecret && $request->header('X-Worker-Secret') === $workerSecret) {
+            $host = $xCustomDomain;
+        } else {
+            $host = $request->getHost();
+        }
+
         $appHost = parse_url(config('app.url'), PHP_URL_HOST);
 
         if ($host === $appHost) {
