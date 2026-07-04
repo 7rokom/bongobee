@@ -600,13 +600,16 @@ const LandingPage = () => {
 
   const page = pages.find((p) => p.slug === slug);
   const product = page ? products.find((p) => p.id === page.productId) : undefined;
+  const [publicFetchDone, setPublicFetchDone] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
-    if (!pages.find((p) => p.slug === slug)) {
-      fetchPublicPage(slug);
+    if (pages.find((p) => p.slug === slug)) {
+      setPublicFetchDone(true);
+      return;
     }
-  }, [slug]);
+    fetchPublicPage(slug).finally(() => setPublicFetchDone(true));
+  }, [slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resellerRef = useResellerRef();
   const addResellerOrder = useResellerStore((s) => s.addResellerOrder);
@@ -666,7 +669,7 @@ const LandingPage = () => {
   }, []);
 
   if (!page || !product) {
-    if (lpLoading || prodLoading || products.length === 0) {
+    if (lpLoading || prodLoading || !publicFetchDone) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-background">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />

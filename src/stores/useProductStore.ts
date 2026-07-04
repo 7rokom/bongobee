@@ -20,7 +20,7 @@ interface ProductStore {
   getRelatedProducts: (productId: string, category: string) => Product[];
 }
 
-const mapRowToProduct = (row: any): Product => ({
+export const mapRowToProduct = (row: any): Product => ({
   id: row.id,
   title: row.title || row.name || '',
   slug: row.slug,

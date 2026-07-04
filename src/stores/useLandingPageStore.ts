@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
+import { useProductStore, mapRowToProduct } from './useProductStore';
 
 export interface LandingPage {
   id: string;
@@ -63,6 +64,7 @@ export const useLandingPageStore = create<LandingPageStore>((set, get) => ({
   },
 
   fetchPublicPage: async (slug: string) => {
+    set({ loading: true });
     try {
       const res = await api.get(`/public/landing-pages/${slug}`);
       if (res?.id) {
@@ -71,8 +73,17 @@ export const useLandingPageStore = create<LandingPageStore>((set, get) => ({
           const exists = s.pages.some((p) => p.slug === slug);
           return { pages: exists ? s.pages.map((p) => (p.slug === slug ? page : p)) : [...s.pages, page] };
         });
+        if (res.product) {
+          const product = mapRowToProduct(res.product);
+          useProductStore.setState((s) => ({
+            products: s.products.some((p) => p.id === product.id)
+              ? s.products
+              : [...s.products, product],
+          }));
+        }
       }
     } catch { /* ignore — shows not-found UI */ }
+    set({ loading: false });
   },
 
   addPage: async (page) => {
