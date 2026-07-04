@@ -27,7 +27,7 @@ import { getAdjustedPurchaseValue } from '@/lib/value-multiplier';
 import PostOrderPopup from '@/components/PostOrderPopup';
 import { useSiteSettingsStore } from '@/stores/useSiteSettingsStore';
 import { isInternalUser } from '@/lib/is-internal-user';
-import { useResellerRef } from '@/contexts/ResellerRefContext';
+import { useResellerRef, useResellerRefValue } from '@/contexts/ResellerRefContext';
 import { useResellerStore } from '@/stores/useResellerStore';
 
 // ─── DOMPurify configuration ─────────────────────────────────────────────────
@@ -150,6 +150,7 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
   const addIncomplete = useIncompleteOrderStore((s) => s.addOrder);
   const removeByPhone = useIncompleteOrderStore((s) => s.removeByPhone);
   const fraudEnabled = useFraudSettingsStore((s) => s.enabled);
+  const resellerCtx = useResellerRefValue();
 
   const thankYouPath = resellerRef ? '/r/thank-you' : '/thank-you';
   const fakeThankYouPath = resellerRef ? '/r/confirm-order' : '/order-confirmed';
@@ -304,6 +305,10 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
         if (!reseller) {
           await fetchResellers();
           reseller = useResellerStore.getState().resellers.find((r: any) => r.id === resellerRef);
+        }
+        // On custom domains /rs/resellers is auth-gated; fall back to context data
+        if (!reseller && resellerCtx) {
+          reseller = { id: resellerCtx.id, name: resellerCtx.name || resellerCtx.branding?.storeName || resellerCtx.id };
         }
         if (!reseller) { toast({ title: 'রিসেলার পাওয়া যায়নি', variant: 'destructive' }); return; }
 
