@@ -64,7 +64,7 @@ const BlogAdmin = () => {
   const featuredInputRef = useRef<HTMLInputElement>(null);
 
   const handleCopy = (post: BlogPost) => {
-    const url = `${window.location.origin}${post.type === 'post' ? `/blog/${post.slug}/` : `/page/${post.slug}/`}`;
+    const url = `${window.location.origin}${post.type === 'post' ? `/blog/${post.slug}` : `/page/${post.slug}`}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopiedId(post.id);
       toast.success('লিংক কপি হয়েছে');
@@ -441,7 +441,7 @@ const BlogAdmin = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {filteredPosts.map((post) => {
             const url = post.status === 'published'
-              ? `${window.location.origin}${post.type === 'post' ? `/blog/${post.slug}/` : `/page/${post.slug}/`}`
+              ? `${window.location.origin}${post.type === 'post' ? `/blog/${post.slug}` : `/page/${post.slug}`}`
               : null;
             return (
               <Card key={post.id} className="overflow-hidden">
