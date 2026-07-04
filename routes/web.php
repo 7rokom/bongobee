@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Route;
 | build, up) via a negative-lookahead so the Laravel API and assets are untouched.
 */
 
+Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'sitemap']);
+Route::get('/robots.txt',  [\App\Http\Controllers\SitemapController::class, 'robots']);
+
 Route::get('/{any?}', function () {
     return view('app');
 })->where('any', '^(?!api|sanctum|storage|build|up|install\.php).*$');

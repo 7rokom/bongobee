@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { api, ApiError } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
-import { Search, CheckCircle, XCircle, EyeOff, Trash2, RefreshCw } from 'lucide-react';
+import { Search, CheckCircle, XCircle, EyeOff, Trash2, RefreshCw, FolderSync, Copy, X } from 'lucide-react';
 
 interface DomainRecord {
   id: number;
@@ -26,12 +26,87 @@ interface Paginated {
   total: number;
 }
 
+interface DnsInfo {
+  server_ip: string;
+  domain: string;
+}
+
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   pending:  { label: 'পেন্ডিং',   cls: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
   verified: { label: 'যাচাইকৃত',  cls: 'bg-green-100 text-green-800 border-green-200' },
   failed:   { label: 'ব্যর্থ',     cls: 'bg-red-100 text-red-800 border-red-200' },
   inactive: { label: 'নিষ্ক্রিয়', cls: 'bg-gray-100 text-gray-700 border-gray-200' },
 };
+
+function DnsModal({ info, onClose }: { info: DnsInfo; onClose: () => void }) {
+  const copy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'কপি হয়েছে।' });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-background rounded-xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="font-semibold text-base">DNS সেটআপ নির্দেশনা</h2>
+          <Button size="icon" variant="ghost" onClick={onClose}><X className="h-4 w-4" /></Button>
+        </div>
+        <div className="p-4 space-y-4 text-sm">
+          <p className="text-muted-foreground">
+            রিসেলারকে বলুন তাদের domain registrar (GoDaddy, Namecheap, etc.) থেকে নিচের DNS record যোগ করতে:
+          </p>
+
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/60">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">Type</th>
+                  <th className="px-3 py-2 text-left font-medium">Name</th>
+                  <th className="px-3 py-2 text-left font-medium">Value</th>
+                  <th className="px-3 py-2 text-left font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-mono font-bold text-blue-600">A</td>
+                  <td className="px-3 py-2 font-mono">@</td>
+                  <td className="px-3 py-2 font-mono">{info.server_ip}</td>
+                  <td className="px-3 py-2">
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copy(info.server_ip)}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </td>
+                </tr>
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-mono font-bold text-blue-600">A</td>
+                  <td className="px-3 py-2 font-mono">www</td>
+                  <td className="px-3 py-2 font-mono">{info.server_ip}</td>
+                  <td className="px-3 py-2">
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copy(info.server_ip)}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-800 text-xs space-y-1">
+            <p className="font-medium">গুরুত্বপূর্ণ পদক্ষেপ:</p>
+            <ol className="list-decimal ml-4 space-y-1">
+              <li>Hostinger hPanel-এ <strong>{info.domain}</strong> domain টি addon domain হিসেবে যোগ করুন।</li>
+              <li>DNS record প্রচার হতে ২৪-৪৮ ঘণ্টা সময় লাগতে পারে।</li>
+              <li>SSL certificate স্বয়ংক্রিয়ভাবে যুক্ত হবে।</li>
+            </ol>
+          </div>
+        </div>
+        <div className="p-4 border-t flex justify-end">
+          <Button onClick={onClose}>বন্ধ করুন</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const ResellerDomains = () => {
   const [result, setResult] = useState<Paginated | null>(null);
@@ -40,6 +115,8 @@ const ResellerDomains = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [actionId, setActionId] = useState<number | null>(null);
+  const [setupId, setSetupId] = useState<number | null>(null);
+  const [dnsInfo, setDnsInfo] = useState<DnsInfo | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -80,8 +157,24 @@ const ResellerDomains = () => {
     }
   };
 
+  const handleSetupFiles = async (row: DomainRecord) => {
+    setSetupId(row.id);
+    try {
+      const res = await api.post(`/admin/reseller-domains/${row.id}/setup-files`, {});
+      toast({ title: res.message ?? 'Files তৈরি হয়েছে।' });
+      setDnsInfo(res.dns_instructions);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Setup ব্যর্থ হয়েছে।';
+      toast({ title: msg, variant: 'destructive' });
+    } finally {
+      setSetupId(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {dnsInfo && <DnsModal info={dnsInfo} onClose={() => setDnsInfo(null)} />}
+
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-xl font-bold">রিসেলার ডোমেইনসমূহ</h1>
         <Button size="sm" variant="outline" onClick={fetchData} className="gap-1.5">
@@ -136,8 +229,9 @@ const ResellerDomains = () => {
                 </thead>
                 <tbody className="divide-y">
                   {result.data.map((row) => {
-                    const sc = STATUS_LABELS[row.status] ?? STATUS_LABELS.pending;
+                    const sc   = STATUS_LABELS[row.status] ?? STATUS_LABELS.pending;
                     const busy = actionId === row.id;
+                    const settingUp = setupId === row.id;
                     return (
                       <tr key={row.id} className="hover:bg-muted/20">
                         <td className="px-4 py-3 font-mono">{row.domain}</td>
@@ -157,7 +251,19 @@ const ResellerDomains = () => {
                           {new Date(row.created_at).toLocaleDateString('bn-BD')}
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex justify-end gap-1.5">
+                          <div className="flex justify-end gap-1.5 flex-wrap">
+                            {row.status === 'verified' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1 text-blue-700 border-blue-200 hover:bg-blue-50"
+                                disabled={settingUp || busy}
+                                onClick={() => handleSetupFiles(row)}
+                              >
+                                <FolderSync className="h-3.5 w-3.5" />
+                                {settingUp ? 'হচ্ছে…' : 'Setup Files'}
+                              </Button>
+                            )}
                             {row.status !== 'verified' && (
                               <Button
                                 size="sm"

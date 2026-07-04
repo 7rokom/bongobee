@@ -84,6 +84,46 @@ const useFaviconOverride = (faviconUrl?: string) => {
   }, [faviconUrl]);
 };
 
+// Convert a hex color (#rrggbb) to the "H S% L%" string the theme expects.
+function hexToHsl(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+// Override the CSS --primary variable with the reseller's brand color.
+const usePrimaryColorOverride = (hex?: string) => {
+  useEffect(() => {
+    if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+    const hsl = hexToHsl(hex);
+    document.documentElement.style.setProperty('--primary', hsl);
+    return () => document.documentElement.style.removeProperty('--primary');
+  }, [hex]);
+};
+
+// Set document title to the reseller's store name.
+const useStoreTitleOverride = (storeName?: string) => {
+  useEffect(() => {
+    if (!storeName) return;
+    const prev = document.title;
+    document.title = storeName;
+    return () => { document.title = prev; };
+  }, [storeName]);
+};
+
 // Shared page wrapper — header + main + footer + drawers
 const PageShell = ({ children }: { children: React.ReactNode }) => {
   const pushEnabled = useSiteSettingsStore((s) => s.pushPromptResellerEnabled);
@@ -143,6 +183,11 @@ const CustomDomainLayout = () => {
             youtubeUrl:   detail.storefront_youtube_url  || undefined,
             twitterUrl:   detail.storefront_twitter_url  || undefined,
             instagramUrl: detail.storefront_instagram_url || undefined,
+            storeName:     detail.storefront_name          || undefined,
+            primaryColor:  detail.storefront_primary_color || undefined,
+            heroTitle:     detail.storefront_hero_title    || undefined,
+            heroSubtitle:  detail.storefront_hero_subtitle || undefined,
+            heroImage:     detail.storefront_hero_image    || undefined,
           },
         };
 
@@ -158,6 +203,8 @@ const CustomDomainLayout = () => {
 
   useTrackingCodeInjection(resolved);
   useFaviconOverride(resolved?.branding?.faviconUrl);
+  usePrimaryColorOverride(resolved?.branding?.primaryColor);
+  useStoreTitleOverride(resolved?.branding?.storeName);
 
   if (status === 'loading') return (
     <>

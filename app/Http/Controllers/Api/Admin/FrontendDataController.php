@@ -265,7 +265,8 @@ class FrontendDataController extends Controller
     {
         $request->validate(['file' => 'required|file|max:20480']);
         $path = $request->file('file')->store('audio', 'public');
-        return response()->json(['path' => '/storage/' . $path, 'fullPath' => $path]);
+        // Return absolute URL so it works unchanged on reseller custom domains.
+        return response()->json(['path' => url('storage/' . $path), 'fullPath' => $path]);
     }
     public function audioDelete(Request $request): JsonResponse
     {

@@ -429,6 +429,7 @@ Route::prefix('admin/reseller-domains')->middleware(['auth:admin,employee'])->gr
     Route::post('/{id}/approve', [\App\Http\Controllers\Api\Admin\ResellerDomainController::class, 'approve']);
     Route::post('/{id}/reject', [\App\Http\Controllers\Api\Admin\ResellerDomainController::class, 'reject']);
     Route::post('/{id}/disable', [\App\Http\Controllers\Api\Admin\ResellerDomainController::class, 'disable']);
+    Route::post('/{id}/setup-files', [\App\Http\Controllers\Api\Admin\ResellerDomainController::class, 'setupFiles']);
     Route::delete('/{id}', [\App\Http\Controllers\Api\Admin\ResellerDomainController::class, 'destroy']);
 });
 

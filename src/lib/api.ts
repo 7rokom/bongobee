@@ -90,7 +90,19 @@ async function request<T = any>(
     payload = JSON.stringify(body);
   }
 
-  const res = await fetch(`${BASE}${path}`, { method, headers, body: payload });
+  // Sanctum SPA: read XSRF-TOKEN cookie and pass it as a header so Laravel's
+  // stateful-API middleware doesn't reject non-GET requests with 419.
+  if (method !== 'GET') {
+    const xsrf = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/)?.[1];
+    if (!xsrf) {
+      // Cookie not yet set — fetch it once, then it's available for this and future requests.
+      await fetch('/sanctum/csrf-cookie', { credentials: 'include' });
+    }
+    const token = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/)?.[1];
+    if (token) headers['X-XSRF-TOKEN'] = decodeURIComponent(token);
+  }
+
+  const res = await fetch(`${BASE}${path}`, { method, headers, body: payload, credentials: 'include' });
 
   const text = await res.text();
   let data: any = null;

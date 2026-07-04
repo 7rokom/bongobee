@@ -12,6 +12,12 @@ export interface ResellerStorefrontBranding {
   youtubeUrl?: string;
   twitterUrl?: string;
   instagramUrl?: string;
+  // Storefront customisation
+  storeName?: string;
+  primaryColor?: string;   // hex, e.g. "#22c55e"
+  heroTitle?: string;
+  heroSubtitle?: string;
+  heroImage?: string;
 }
 
 export interface ResellerRefValue {

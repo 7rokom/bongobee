@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Settings, Loader2, Code2, MessageSquare, Palette, Plus, Trash2 } from 'lucide-react';
+import { Settings, Loader2, Code2, MessageSquare, Palette, Plus, Trash2, Store } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useResellerStore } from '@/stores/useResellerStore';
 import { useSiteSettingsStore } from '@/stores/useSiteSettingsStore';
@@ -39,6 +39,13 @@ const ResellerSettings = () => {
   const [savingCodes, setSavingCodes] = useState(false);
   const [savingSms, setSavingSms] = useState(false);
 
+  const [storefrontName, setStorefrontName] = useState('');
+  const [storefrontPrimaryColor, setStorefrontPrimaryColor] = useState('#01b76d');
+  const [storefrontHeroTitle, setStorefrontHeroTitle] = useState('');
+  const [storefrontHeroSubtitle, setStorefrontHeroSubtitle] = useState('');
+  const [storefrontHeroImage, setStorefrontHeroImage] = useState('');
+  const [savingStorefront, setSavingStorefront] = useState(false);
+
   const [storefrontLogoUrl, setStorefrontLogoUrl] = useState('');
   const [storefrontFaviconUrl, setStorefrontFaviconUrl] = useState('');
   const [storefrontBio, setStorefrontBio] = useState('');
@@ -64,6 +71,11 @@ const ResellerSettings = () => {
       setSmsConfirmedTemplate(me.smsConfirmedTemplate || '');
       setSmsShipmentTemplate(me.smsShipmentTemplate || '');
       setSmsFollowupTemplate(me.smsFollowupTemplate || '');
+      setStorefrontName(me.storefrontName || '');
+      setStorefrontPrimaryColor(me.storefrontPrimaryColor || '#01b76d');
+      setStorefrontHeroTitle(me.storefrontHeroTitle || '');
+      setStorefrontHeroSubtitle(me.storefrontHeroSubtitle || '');
+      setStorefrontHeroImage(me.storefrontHeroImage || '');
       setStorefrontLogoUrl(me.storefrontLogoUrl || '');
       setStorefrontFaviconUrl(me.storefrontFaviconUrl || '');
       setStorefrontBio(me.storefrontBio || '');
@@ -187,6 +199,24 @@ const ResellerSettings = () => {
     }
   };
 
+  const handleSaveStorefront = async () => {
+    setSavingStorefront(true);
+    try {
+      await updateReseller(resellerId, {
+        storefrontName: storefrontName.trim(),
+        storefrontPrimaryColor: storefrontPrimaryColor.trim(),
+        storefrontHeroTitle: storefrontHeroTitle.trim(),
+        storefrontHeroSubtitle: storefrontHeroSubtitle.trim(),
+        storefrontHeroImage: storefrontHeroImage.trim(),
+      });
+      toast({ title: 'স্টোর কাস্টমাইজেশন সংরক্ষিত হয়েছে' });
+    } catch (e: any) {
+      toast({ title: 'সংরক্ষণ ব্যর্থ', description: e?.message || '', variant: 'destructive' });
+    } finally {
+      setSavingStorefront(false);
+    }
+  };
+
   const handleSaveBranding = async () => {
     setSavingBranding(true);
     try {
@@ -293,6 +323,92 @@ const ResellerSettings = () => {
         <Button onClick={handleSaveSms} disabled={savingSms} className="w-full">
           {savingSms && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           SMS মেসেজ সংরক্ষণ করুন
+        </Button>
+      </Card>
+
+      <Card className="p-4 sm:p-6 space-y-5">
+        <div className="flex items-start gap-2">
+          <Store className="h-5 w-5 text-primary mt-0.5" />
+          <div>
+            <h2 className="text-lg font-semibold mb-1">স্টোর কাস্টমাইজেশন</h2>
+            <p className="text-sm text-muted-foreground">
+              কাস্টম ডোমেইনে আপনার স্টোরের নাম, রঙ ও হিরো সেকশন কাস্টমাইজ করুন।
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sf-store-name">স্টোরের নাম</Label>
+          <Input
+            id="sf-store-name"
+            value={storefrontName}
+            onChange={(e) => setStorefrontName(e.target.value)}
+            placeholder="যেমন: Rahim's Shop"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sf-color">প্রাইমারি কালার</Label>
+          <div className="flex items-center gap-3">
+            <input
+              id="sf-color"
+              type="color"
+              value={storefrontPrimaryColor}
+              onChange={(e) => setStorefrontPrimaryColor(e.target.value)}
+              className="h-10 w-16 cursor-pointer rounded border border-input p-1"
+            />
+            <Input
+              value={storefrontPrimaryColor}
+              onChange={(e) => setStorefrontPrimaryColor(e.target.value)}
+              placeholder="#01b76d"
+              className="w-32 font-mono text-sm"
+              maxLength={7}
+            />
+            <span className="text-xs text-muted-foreground">সাইটের বাটন, লিংক ও হেডারের রঙ পরিবর্তন হবে</span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sf-hero-title">হিরো সেকশনের শিরোনাম</Label>
+          <Input
+            id="sf-hero-title"
+            value={storefrontHeroTitle}
+            onChange={(e) => setStorefrontHeroTitle(e.target.value)}
+            placeholder="যেমন: সেরা মানের পণ্য, সেরা দামে"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sf-hero-subtitle">হিরো সেকশনের সাবটাইটেল</Label>
+          <Input
+            id="sf-hero-subtitle"
+            value={storefrontHeroSubtitle}
+            onChange={(e) => setStorefrontHeroSubtitle(e.target.value)}
+            placeholder="যেমন: দ্রুত ডেলিভারি, সম্পূর্ণ নিরাপদ"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sf-hero-image">হিরো সেকশনের ব্যাকগ্রাউন্ড ইমেজ URL</Label>
+          <Input
+            id="sf-hero-image"
+            value={storefrontHeroImage}
+            onChange={(e) => setStorefrontHeroImage(e.target.value)}
+            placeholder="https://..."
+          />
+          {storefrontHeroImage && (
+            <img
+              src={storefrontHeroImage}
+              alt="Hero preview"
+              className="mt-2 w-full max-h-32 object-cover rounded-md border"
+              onError={(e) => (e.currentTarget.style.display = 'none')}
+            />
+          )}
+        </div>
+
+        <Button onClick={handleSaveStorefront} disabled={savingStorefront} className="w-full">
+          {savingStorefront && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          স্টোর কাস্টমাইজেশন সংরক্ষণ করুন
         </Button>
       </Card>
 

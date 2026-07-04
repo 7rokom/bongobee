@@ -28,6 +28,11 @@ export interface Reseller {
   storefrontYoutubeUrl?: string;
   storefrontTwitterUrl?: string;
   storefrontInstagramUrl?: string;
+  storefrontName?: string;
+  storefrontPrimaryColor?: string;
+  storefrontHeroTitle?: string;
+  storefrontHeroSubtitle?: string;
+  storefrontHeroImage?: string;
 }
 
 export interface ResellerOrder {
@@ -103,6 +108,11 @@ const mapReseller = (r: any): Reseller => ({
   storefrontYoutubeUrl: r.storefront_youtube_url || '',
   storefrontTwitterUrl: r.storefront_twitter_url || '',
   storefrontInstagramUrl: r.storefront_instagram_url || '',
+  storefrontName: r.storefront_name || '',
+  storefrontPrimaryColor: r.storefront_primary_color || '',
+  storefrontHeroTitle: r.storefront_hero_title || '',
+  storefrontHeroSubtitle: r.storefront_hero_subtitle || '',
+  storefrontHeroImage: r.storefront_hero_image || '',
 });
 
 const mapOrder = (r: any): ResellerOrder => ({
@@ -214,6 +224,11 @@ export const useResellerStore = create<ResellerStore>()(
         if (updates.storefrontYoutubeUrl !== undefined) row.storefront_youtube_url = updates.storefrontYoutubeUrl;
         if (updates.storefrontTwitterUrl !== undefined) row.storefront_twitter_url = updates.storefrontTwitterUrl;
         if (updates.storefrontInstagramUrl !== undefined) row.storefront_instagram_url = updates.storefrontInstagramUrl;
+        if (updates.storefrontName !== undefined) row.storefront_name = updates.storefrontName;
+        if (updates.storefrontPrimaryColor !== undefined) row.storefront_primary_color = updates.storefrontPrimaryColor;
+        if (updates.storefrontHeroTitle !== undefined) row.storefront_hero_title = updates.storefrontHeroTitle;
+        if (updates.storefrontHeroSubtitle !== undefined) row.storefront_hero_subtitle = updates.storefrontHeroSubtitle;
+        if (updates.storefrontHeroImage !== undefined) row.storefront_hero_image = updates.storefrontHeroImage;
         await api.put(`/rs/resellers/${id}`, row);
         set((s) => ({ resellers: s.resellers.map((r) => (r.id === id ? { ...r, ...updates } : r)) }));
       },

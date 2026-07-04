@@ -7,6 +7,19 @@ import { Play, Pause, Volume2, VolumeX } from "lucide-react";
  * - User can pause / resume by clicking the floating button
  * - Stops on its own when the audio ends
  */
+
+// Audio files are stored on the main site. On reseller custom domains the
+// relative /storage/... path would resolve to the custom domain's PHP
+// bootstrap, which may not stream audio correctly. Making the URL absolute
+// ensures the browser always fetches audio from the main server directly.
+const MAIN_SITE_URL = (import.meta.env.VITE_MAIN_SITE_URL as string | undefined) || '';
+
+function resolveAudioSrc(url: string): string {
+  if (!url || url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (MAIN_SITE_URL) return MAIN_SITE_URL.replace(/\/$/, '') + (url.startsWith('/') ? url : '/' + url);
+  return url;
+}
+
 interface PageAudioPlayerProps {
   audioUrl: string;
   enabled: boolean;
@@ -125,7 +138,7 @@ const PageAudioPlayer = ({ audioUrl, enabled, pageKey }: PageAudioPlayerProps) =
     <>
       <audio
         ref={audioRef}
-        src={audioUrl}
+        src={resolveAudioSrc(audioUrl)}
         preload="auto"
         playsInline
         onEnded={() => setIsPlaying(false)}

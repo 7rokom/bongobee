@@ -85,7 +85,7 @@ const TimerCard = ({
       <div className="flex flex-col items-center gap-3 py-4">
         {!ready ? (
           <>
-            <div className="text-sm text-muted-foreground">অপেক্ষা করুন...</div>
+            <div className="text-sm text-muted-foreground">🙏Please wait...</div>
             <div className="text-4xl font-bold tabular-nums text-primary">
               {remaining}
               <span className="text-base font-normal text-muted-foreground"> সেকেন্ড</span>
@@ -100,6 +100,14 @@ const TimerCard = ({
       <AdBox html={adBottom} label="অ্যাড স্পেস (নিচে)" />
     </div>
   );
+};
+
+const isInternalUrl = (url: string): boolean => {
+  try {
+    return new URL(url).hostname === window.location.hostname;
+  } catch {
+    return false;
+  }
 };
 
 const GoLink = () => {
@@ -150,6 +158,13 @@ const GoLink = () => {
       }
     })();
   }, [slug, directUrl]);
+
+  // Bypass the gateway entirely for internal (same-domain) links
+  useEffect(() => {
+    if (targetUrl && isInternalUrl(targetUrl)) {
+      window.location.replace(targetUrl);
+    }
+  }, [targetUrl]);
 
   // Load blog posts
   useEffect(() => {

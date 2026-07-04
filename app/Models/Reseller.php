@@ -25,6 +25,8 @@ class Reseller extends Authenticatable
         'storefront_address', 'storefront_phone', 'storefront_footer_credit',
         'storefront_legal_pages', 'storefront_facebook_url', 'storefront_youtube_url',
         'storefront_twitter_url', 'storefront_instagram_url',
+        'storefront_name', 'storefront_primary_color',
+        'storefront_hero_title', 'storefront_hero_subtitle', 'storefront_hero_image',
     ];
     protected $hidden = ['password'];
 

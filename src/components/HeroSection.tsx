@@ -2,15 +2,19 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useSiteSettingsStore } from "@/stores/useSiteSettingsStore";
-import { useResellerSlug } from "@/contexts/ResellerRefContext";
+import { useResellerSlug, useResellerRefValue } from "@/contexts/ResellerRefContext";
 
 const HeroSection = () => {
-  const heroTitle = useSiteSettingsStore((s) => s.heroTitle);
-  const heroSubtitle = useSiteSettingsStore((s) => s.heroSubtitle);
-  const heroBackgroundImage = useSiteSettingsStore((s) => s.heroBackgroundImage);
+  const siteHeroTitle = useSiteSettingsStore((s) => s.heroTitle);
+  const siteHeroSubtitle = useSiteSettingsStore((s) => s.heroSubtitle);
+  const siteHeroBackgroundImage = useSiteSettingsStore((s) => s.heroBackgroundImage);
   const resellerRef = useResellerSlug();
+  const resellerValue = useResellerRefValue();
+  const branding = resellerValue?.branding;
 
-  const bgImage = heroBackgroundImage || '/images/hero-bg.png';
+  const heroTitle = branding?.heroTitle || siteHeroTitle;
+  const heroSubtitle = branding?.heroSubtitle || siteHeroSubtitle;
+  const bgImage = branding?.heroImage || siteHeroBackgroundImage || '/images/hero-bg.png';
 
   return (
     <section

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,6 @@ import { toast } from '@/hooks/use-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { validatePhone, validateName, normalizePhone } from '@/lib/order-validation';
 import { fetchAndCacheCourierRatio } from '@/lib/fraud-check';
-import { generateFingerprint } from '@/lib/fingerprint';
 import ValidationPopup from '@/components/ValidationPopup';
 import { Trash2, Plus, Search, X, CheckCircle } from 'lucide-react';
 import type { ResellerCartItem } from './ResellerShop';
@@ -45,16 +44,6 @@ const ResellerPlaceOrder = () => {
   const [validationMsg, setValidationMsg] = useState('');
   const [showProductPicker, setShowProductPicker] = useState(false);
   const [productSearch, setProductSearch] = useState('');
-  const [customerIp, setCustomerIp] = useState('');
-  const [customerFingerprint, setCustomerFingerprint] = useState('');
-
-  useEffect(() => {
-    fetch('https://api.ipify.org?format=json')
-      .then(res => res.json())
-      .then(data => setCustomerIp(data.ip))
-      .catch(() => setCustomerIp(''));
-    setCustomerFingerprint(generateFingerprint());
-  }, []);
 
   const updateItem = (index: number, updates: Partial<ResellerCartItem>) => {
     setItems(prev => prev.map((item, i) => i === index ? { ...item, ...updates } : item));
@@ -103,19 +92,6 @@ const ResellerPlaceOrder = () => {
 
     const reseller = getReseller();
     if (!reseller) return;
-
-    // Ensure fingerprint exists even if effect didn't finish
-    let fp = customerFingerprint;
-    if (!fp) { fp = generateFingerprint(); setCustomerFingerprint(fp); }
-    let ip = customerIp;
-    if (!ip) {
-      try {
-        const r = await fetch('https://api.ipify.org?format=json');
-        const d = await r.json();
-        ip = d.ip || '';
-        if (ip) setCustomerIp(ip);
-      } catch { /* ignore */ }
-    }
 
     const normalizedPhone = normalizePhone(customerForm.phone);
 
@@ -173,8 +149,6 @@ const ResellerPlaceOrder = () => {
       status: 'পেন্ডিং',
       date: new Date().toISOString(),
       notes: customerForm.note.trim() ? [customerForm.note.trim()] : [],
-      customerIp: ip || undefined,
-      customerFingerprint: fp || undefined,
     };
 
     try {
@@ -192,8 +166,6 @@ const ResellerPlaceOrder = () => {
         await api.post('/rs/reseller-orders', {
           id: (basePayload as any).id,
           ...basePayload,
-          customer_ip: resellerOrder.customerIp || null,
-          customer_fingerprint: resellerOrder.customerFingerprint || null,
         });
       } catch (e: any) {
         insertError = e;
