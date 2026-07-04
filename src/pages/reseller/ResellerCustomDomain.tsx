@@ -6,11 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useResellerDomainStore } from '@/stores/useResellerDomainStore';
 import { useResellerStore } from '@/stores/useResellerStore';
+import { useSiteSettingsStore } from '@/stores/useSiteSettingsStore';
 import { toast } from '@/hooks/use-toast';
 import { Globe, Trash2, ShieldCheck, RefreshCw, Copy, Check, AlertCircle, Clock, X, CheckCircle } from 'lucide-react';
 import { ApiError } from '@/lib/api';
-
-const CNAME_TARGET = import.meta.env.VITE_CUSTOM_DOMAIN_CNAME || 'store.bongobee.com';
 
 const getStoredResellerId = () => {
   try {
@@ -41,6 +40,7 @@ function StatusBadge({ status }: { status: string }) {
 const ResellerCustomDomain = () => {
   const { domain, loading, fetchDomain, addDomain, removeDomain, verifyDns } = useResellerDomainStore();
   const resellers = useResellerStore((s) => s.resellers);
+  const serverIp  = useSiteSettingsStore((s) => s.customDomainServerIp);
   const resellerId = getStoredResellerId();
   const reseller = resellers.find((r) => r.id === resellerId);
 
@@ -239,29 +239,42 @@ const ResellerCustomDomain = () => {
                 <span>Type</span><span>Host / Name</span><span className="col-span-2">Value / Target</span>
               </div>
 
-              {/* CNAME row */}
-              <div className="grid grid-cols-4 items-center px-3 py-2 border-t border-blue-100 gap-1">
-                <span className="font-mono font-bold text-blue-700">CNAME</span>
-                <span className="font-mono">
-                  {domain.domain.split('.').length > 2 ? domain.domain.split('.')[0] : '@'}
-                </span>
-                <code className="col-span-1 truncate font-mono text-xs">{CNAME_TARGET}</code>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 shrink-0 justify-self-end"
-                  onClick={() => handleCopy(CNAME_TARGET, 'cname')}
-                >
-                  {copiedRow === 'cname' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
-                </Button>
-              </div>
-
-              {/* A record row */}
+              {/* A record — root */}
               <div className="grid grid-cols-4 items-center px-3 py-2 border-t border-blue-100 gap-1">
                 <span className="font-mono font-bold text-blue-700">A</span>
                 <span className="font-mono">@</span>
-                <code className="col-span-1 font-mono text-xs">{'<আপনার সার্ভার IP>'}</code>
-                <span className="text-muted-foreground text-xs justify-self-end">প্রয়োজনে</span>
+                <code className="col-span-1 font-mono text-xs truncate">
+                  {serverIp || <span className="text-muted-foreground italic">সেট করা হয়নি</span>}
+                </code>
+                {serverIp ? (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 shrink-0 justify-self-end"
+                    onClick={() => handleCopy(serverIp, 'a-root')}
+                  >
+                    {copiedRow === 'a-root' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                  </Button>
+                ) : <span />}
+              </div>
+
+              {/* A record — www */}
+              <div className="grid grid-cols-4 items-center px-3 py-2 border-t border-blue-100 gap-1">
+                <span className="font-mono font-bold text-blue-700">A</span>
+                <span className="font-mono">www</span>
+                <code className="col-span-1 font-mono text-xs truncate">
+                  {serverIp || <span className="text-muted-foreground italic">সেট করা হয়নি</span>}
+                </code>
+                {serverIp ? (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 shrink-0 justify-self-end"
+                    onClick={() => handleCopy(serverIp, 'a-www')}
+                  >
+                    {copiedRow === 'a-www' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                  </Button>
+                ) : <span />}
               </div>
             </div>
 

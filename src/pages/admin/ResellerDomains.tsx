@@ -1,11 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { api, ApiError } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
-import { Search, CheckCircle, XCircle, EyeOff, Trash2, RefreshCw, FolderSync, Copy, X } from 'lucide-react';
+import { useSiteSettingsStore } from '@/stores/useSiteSettingsStore';
+import { Search, CheckCircle, XCircle, EyeOff, Trash2, RefreshCw, FolderSync, Copy, X, Server, Save } from 'lucide-react';
 
 interface DomainRecord {
   id: number;
@@ -109,6 +111,26 @@ function DnsModal({ info, onClose }: { info: DnsInfo; onClose: () => void }) {
 }
 
 const ResellerDomains = () => {
+  const storedServerIp = useSiteSettingsStore((s) => s.customDomainServerIp);
+  const updateSettings  = useSiteSettingsStore((s) => s.updateSettings);
+  const [serverIpInput, setServerIpInput] = useState('');
+  const [savingIp, setSavingIp] = useState(false);
+
+  // Sync local input when store loads
+  useEffect(() => { if (storedServerIp) setServerIpInput(storedServerIp); }, [storedServerIp]);
+
+  const handleSaveIp = async () => {
+    setSavingIp(true);
+    try {
+      await updateSettings({ customDomainServerIp: serverIpInput.trim() });
+      toast({ title: 'সার্ভার IP সেভ হয়েছে।' });
+    } catch {
+      toast({ title: 'সেভ ব্যর্থ।', variant: 'destructive' });
+    } finally {
+      setSavingIp(false);
+    }
+  };
+
   const [result, setResult] = useState<Paginated | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -181,6 +203,42 @@ const ResellerDomains = () => {
           <RefreshCw className="h-3.5 w-3.5" /> রিফ্রেশ
         </Button>
       </div>
+
+      {/* Server IP Settings */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-2 pt-4">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Server className="h-4 w-4 text-primary" />
+            সার্ভার IP সেটিং
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pb-4">
+          <p className="text-xs text-muted-foreground mb-3">
+            এই IP রিসেলারদের "My Store" পেজে DNS সেটআপ নির্দেশনায় দেখাবে।
+          </p>
+          <div className="flex gap-2 items-end">
+            <div className="flex-1 space-y-1">
+              <Label htmlFor="server-ip" className="text-xs">সার্ভার IP অ্যাড্রেস</Label>
+              <Input
+                id="server-ip"
+                placeholder="147.93.99.183"
+                value={serverIpInput}
+                onChange={(e) => setServerIpInput(e.target.value)}
+                className="font-mono text-sm h-9"
+              />
+            </div>
+            <Button size="sm" className="gap-1.5 h-9" onClick={handleSaveIp} disabled={savingIp}>
+              <Save className="h-3.5 w-3.5" />
+              {savingIp ? 'সেভ হচ্ছে…' : 'সেভ করুন'}
+            </Button>
+          </div>
+          {storedServerIp && (
+            <p className="text-xs text-muted-foreground mt-2">
+              বর্তমান IP: <code className="font-mono text-primary">{storedServerIp}</code>
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">

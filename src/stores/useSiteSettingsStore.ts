@@ -127,6 +127,8 @@ export interface SiteSettings {
   // long-lived browser caches (products = 7 days, mohasagor = 30 days)
   productsCacheVersion: number;
   mohasagorCacheVersion: number;
+  // Custom domain server IP — shown in reseller DNS instructions
+  customDomainServerIp: string;
 }
 
 
@@ -274,6 +276,7 @@ const defaultSettings: SiteSettings = {
   },
   productsCacheVersion: 1,
   mohasagorCacheVersion: 1,
+  customDomainServerIp: '',
 };
 
 
