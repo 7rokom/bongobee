@@ -315,10 +315,9 @@ const CheckoutSection = ({ product, page, resellerRef, addResellerOrder, fetchRe
         const { api } = await import('@/lib/api');
         const cpData = await api.get(`/public/reseller-prices?reseller_id=${reseller.id}&product_id=${product.id}`).catch(() => []);
         const customPriceRow = Array.isArray(cpData) ? cpData[0] : null;
-        const baseSellingPrice = customPriceRow?.custom_price ? Number(customPriceRow.custom_price) : currentPrice;
-        const resellerPrice = product.resellerPrice || product.price;
-        const netDelivery = Math.max(0, deliveryCharge - discount);
-        const perUnitDelivery = quantity > 0 ? netDelivery / quantity : 0;
+        const baseSellingPrice = Math.round(customPriceRow?.custom_price ? Number(customPriceRow.custom_price) : currentPrice);
+        const resellerPrice = Math.round(product.resellerPrice || product.price);
+        const perUnitDelivery = hasFreeDelivery ? 0 : Math.round(Number(delivery) / (quantity || 1));
         const sellingPrice = baseSellingPrice + perUnitDelivery;
         const vars = variations;
         const resellerItem = {
