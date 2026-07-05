@@ -1107,16 +1107,16 @@ const AdminResellerOrders = () => {
             <table className="w-full text-[14px] table-fixed">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="text-center py-3 px-2 font-medium text-muted-foreground w-[32px]">
+                  <th className="text-center py-3 px-2 font-medium text-muted-foreground w-[28px]">
                     <Checkbox checked={pageItems.length > 0 && pageItems.every(o => selectedOrders.has(o.id))} onCheckedChange={() => { const allSelected = pageItems.length > 0 && pageItems.every(o => selectedOrders.has(o.id)); setSelectedOrders(prev => { const n = new Set(prev); if (allSelected) pageItems.forEach(o => n.delete(o.id)); else pageItems.forEach(o => n.add(o.id)); return n; }); }} className="h-3.5 w-3.5" />
                   </th>
-                  <th className="text-left py-3 px-3 font-medium text-muted-foreground w-[100px]">অর্ডার</th>
-                  <th className="text-left py-3 px-3 font-medium text-muted-foreground w-[130px]">রিসেলার</th>
-                  <th className="text-left py-3 px-3 font-medium text-muted-foreground w-[200px]">কাস্টমার</th>
-                  <th className="text-left py-3 px-3 font-medium text-muted-foreground w-[170px]">প্রোডাক্ট</th>
-                  <th className="text-left py-3 px-3 font-medium text-muted-foreground w-[180px]">মূল্য</th>
-                  <th className="text-left py-3 px-3 font-medium text-muted-foreground w-[150px]">স্ট্যাটাস</th>
-                  <th className="text-left py-3 px-3 font-medium text-muted-foreground w-[130px]">একশন</th>
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground w-[88px]">অর্ডার</th>
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground w-[90px]">রিসেলার</th>
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground w-[185px]">কাস্টমার</th>
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground w-[145px]">প্রোডাক্ট</th>
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground w-[155px]">মূল্য</th>
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground w-[155px]">স্ট্যাটাস</th>
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground w-[90px]">একশন</th>
                 </tr>
               </thead>
               <tbody>
@@ -1128,7 +1128,7 @@ const AdminResellerOrders = () => {
                   return (
                     <tr key={order.id} className={`border-b last:border-0 hover:bg-muted/30 align-top ${selectedOrders.has(order.id) ? 'bg-primary/5' : ''}`}>
                       <td className="py-3 px-2 text-center"><Checkbox checked={selectedOrders.has(order.id)} onCheckedChange={() => toggleSelect(order.id)} className="h-3.5 w-3.5" /></td>
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-2">
                         <span className="font-bold text-primary text-sm">{order.id}</span>
                         <p className="text-[10px] text-muted-foreground mt-0.5">{formatDate(order.date)}</p>
                         {isReturningResellerCustomer(order) ? (
@@ -1141,20 +1141,20 @@ const AdminResellerOrders = () => {
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-2">
                         {(() => {
                           const r = resellers.find(res => res.id === order.resellerId);
                           return (
-                            <div>
+                            <div className="min-w-0">
                               <button
                                 type="button"
                                 onClick={() => window.open(`/reseller?as=${order.resellerId}`, '_blank')}
-                                className="font-semibold text-primary text-sm hover:underline text-left"
-                                title="রিসেলার ড্যাশবোর্ড দেখুন"
+                                className="font-semibold text-primary text-xs hover:underline text-left truncate block w-full"
+                                title={order.resellerName}
                               >
                                 {order.resellerName}
                               </button>
-                              {r?.phone && <p className="text-[10px] text-muted-foreground">{r.phone}</p>}
+                              {r?.phone && <p className="text-[10px] text-muted-foreground truncate">{r.phone}</p>}
                               {r?.phone && (
                                 <div className="flex gap-1 mt-1">
                                   <Button variant="outline" size="sm" className="h-5 w-5 p-0" onClick={() => window.open(`tel:${r.phone}`)}><Phone className="w-2.5 h-2.5 text-foreground" /></Button>
@@ -1165,7 +1165,7 @@ const AdminResellerOrders = () => {
                           );
                         })()}
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-2">
                         <p className="font-semibold text-foreground text-sm">{order.customerName}</p>
                         <p className="text-xs text-muted-foreground">{order.customerAddress}</p>
                         <div className="flex items-center gap-1 mt-1">
@@ -1191,7 +1191,7 @@ const AdminResellerOrders = () => {
                         {/* Courier tracking UI moved to action column */}
                         {/* Note preview moved to action column */}
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-2">
                         <div className="space-y-1.5">
                           {order.items.map((item: any, i) => (
                             <div key={i} className="flex items-center gap-2">
@@ -1218,7 +1218,7 @@ const AdminResellerOrders = () => {
                         </div>
                       </td>
                       {/* Price breakdown */}
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-2">
                         <div className="text-[12px] space-y-0">
                           <div className="flex justify-between gap-2"><span className="text-muted-foreground">সেলিং প্রাইজ:</span><span>৳{pb.subtotalSelling}</span></div>
                           <div className="flex justify-between gap-2"><span className="text-muted-foreground">- DP প্রাইজ:</span><span>৳{pb.subtotalDP}</span></div>
@@ -1228,12 +1228,12 @@ const AdminResellerOrders = () => {
                           <div className="flex justify-between gap-2 border-t mt-1 pt-1 font-bold text-green-600"><span>প্রফিট:</span><span>৳{pb.profit}</span></div>
                         </div>
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-2">
                         {['ডেলিভারড', 'পেইড রিটার্ন'].includes(order.status) ? (
                           <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[order.status] || ''}`}>{order.status} 🔒</span>
                         ) : (
                         <Select value={order.status} onValueChange={(v) => handleStatusChange(order.id, v)}>
-                          <SelectTrigger className="h-7 text-xs w-[120px]"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="h-7 text-xs w-full"><SelectValue /></SelectTrigger>
                           <SelectContent>{STATUS_OPTIONS.map(s => (<SelectItem key={s} value={s}><span className={`px-1.5 py-0.5 rounded text-xs ${statusColors[s] || ''}`}>{s}</span></SelectItem>))}</SelectContent>
                         </Select>
                         )}
@@ -1245,7 +1245,7 @@ const AdminResellerOrders = () => {
                             const emp = employees.find(e => e.id === val);
                             if (emp) assignResellerOrder(order.id, emp.id, emp.name);
                           }}>
-                            <SelectTrigger className="h-6 text-[10px] w-[120px]"><SelectValue placeholder="এসাইন..." /></SelectTrigger>
+                            <SelectTrigger className="h-6 text-[10px] w-full"><SelectValue placeholder="এসাইন..." /></SelectTrigger>
                             <SelectContent>
                               {order.assignedTo && <SelectItem value="__unassign__">অ্যাসাইন সরান</SelectItem>}
                               {employees.filter(e => e.isActive !== false).map(e => (
@@ -1296,10 +1296,19 @@ const AdminResellerOrders = () => {
                             </div>
                           );
                         })()}
-                        {/* Courier tracking UI moved to customer column for parity with main orders */}
+                        {/* Notes below status */}
+                        {(order.notes && order.notes.length > 0) && (
+                          <div className="mt-1.5 space-y-0.5">
+                            {order.notes.map((note, ni) => (
+                              <p key={ni} className="text-[9px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 leading-tight break-words">
+                                📝 {note}
+                              </p>
+                            ))}
+                          </div>
+                        )}
                       </td>
-                      <td className="py-3 px-3">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                      <td className="py-3 px-2">
+                        <div className="flex items-center gap-1 flex-wrap">
                           {!isSentToCourier(order.id) ? (
                             <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="কুরিয়ারে পাঠান"
                               onClick={() => setCourierPickerOrder(order)} disabled={sendingToSf.has(order.id) || sendingToCb.has(order.id)}>
@@ -1371,11 +1380,6 @@ const AdminResellerOrders = () => {
                               </Button>
                             )}
                           </div>
-                        )}
-                        {(order.notes && order.notes.length > 0) && (
-                          <p className="text-[9px] text-amber-600 mt-1 truncate max-w-[160px]" title={order.notes[order.notes.length - 1]}>
-                            📝 {order.notes[order.notes.length - 1]}
-                          </p>
                         )}
                       </td>
                     </tr>
