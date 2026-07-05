@@ -66,6 +66,13 @@ class ProductController extends Controller
         return response()->json(['message' => 'Deleted.']);
     }
 
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $request->validate(['image' => 'required|image|max:5120']); // 5 MB limit
+        $path = $request->file('image')->store('products', 'public');
+        return response()->json(['url' => url('storage/' . $path)]);
+    }
+
     /**
      * Validation rules accepting the frontend's field names (title, long_description,
      * category slug, rating/reviews, affiliate). All optional so partial updates work.

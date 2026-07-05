@@ -147,6 +147,7 @@ Route::prefix('admin')->middleware(['auth:admin,employee'])->group(function () {
     Route::apiResource('/coupons', CouponController::class)->except(['show']);
 
     // Products
+    Route::post('/products/upload-image', [ProductController::class, 'uploadImage']);
     Route::apiResource('/products', ProductController::class);
     Route::apiResource('/categories', CategoryController::class)->except(['show']);
     Route::apiResource('/variations', VariationController::class)->except(['show']);

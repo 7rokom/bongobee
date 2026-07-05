@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Upload, Link, X, Image, Video, Save, Eye, FileText, Star, Plus, Trash2, Store } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
 import 'react-quill-new/dist/quill.snow.css';
 
 const ReactQuill = lazy(() => import('react-quill-new'));
@@ -134,6 +135,8 @@ const ProductForm = () => {
 
   const featuredInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [saving, setSaving] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const [varSearch, setVarSearch] = useState('');
   const [longDescMode, setLongDescMode] = useState<'visual' | 'code'>('visual');
 
@@ -141,20 +144,40 @@ const ProductForm = () => {
   const availableSizes = variationItems.filter(i => i.type === 'size');
   const availableWeights = variationItems.filter(i => i.type === 'weight');
 
-  const handleFileToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve) => { const r = new FileReader(); r.onloadend = () => resolve(r.result as string); r.readAsDataURL(file); });
+  const uploadImageToServer = async (file: File): Promise<string> => {
+    const fd = new FormData();
+    fd.append('image', file);
+    const res = await api.post<{ url: string }>('/admin/products/upload-image', fd);
+    return res.url;
+  };
 
   const handleFeaturedUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setFeaturedImage(await handleFileToBase64(file));
+    if (!file) return;
+    setImageUploading(true);
+    try {
+      setFeaturedImage(await uploadImageToServer(file));
+    } catch {
+      toast.error('ইমেজ আপলোড ব্যর্থ হয়েছে');
+    } finally {
+      setImageUploading(false);
+      if (featuredInputRef.current) featuredInputRef.current.value = '';
+    }
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      const imgs: string[] = [];
-      for (let i = 0; i < files.length; i++) imgs.push(await handleFileToBase64(files[i]));
-      setGalleryImages(prev => [...prev, ...imgs]);
+    if (!files?.length) return;
+    setImageUploading(true);
+    try {
+      const urls: string[] = [];
+      for (let i = 0; i < files.length; i++) urls.push(await uploadImageToServer(files[i]));
+      setGalleryImages(prev => [...prev, ...urls]);
+    } catch {
+      toast.error('ইমেজ আপলোড ব্যর্থ হয়েছে');
+    } finally {
+      setImageUploading(false);
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
     }
   };
 
@@ -180,7 +203,7 @@ const ProductForm = () => {
 
   const updateField = (field: string, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
 
-  const handleSave = (saveStatus: 'published' | 'draft') => {
+  const handleSave = async (saveStatus: 'published' | 'draft') => {
     if (!formData.title || !formData.price) { toast.error('পণ্যের নাম ও মূল্য আবশ্যক'); return; }
     if (stockType === 'self' && !stockProductName) { toast.error('সেল্ফ স্টকের জন্য স্টক প্রোডাক্ট সিলেক্ট করুন'); return; }
     if (editingProduct && !fullRowLoaded) {
@@ -218,14 +241,22 @@ const ProductForm = () => {
       affiliateButtonText: isAffiliate ? (affiliateButtonText.trim() || undefined) : undefined,
     };
 
-    if (editingProduct) {
-      updateProduct(editingProduct.id, productData);
-      toast.success('পণ্য আপডেট করা হয়েছে');
-    } else {
-      addProduct({ ...productData as Product, id: Date.now().toString(), inStock: true, rating: 0, reviewCount: 0 });
-      toast.success(saveStatus === 'draft' ? 'পণ্য ড্রাফট হিসেবে সেভ হয়েছে' : 'পণ্য পাবলিশ করা হয়েছে');
+    setSaving(true);
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, productData);
+        toast.success('পণ্য আপডেট করা হয়েছে');
+      } else {
+        await addProduct({ ...productData as Product, id: Date.now().toString(), inStock: true, rating: 0, reviewCount: 0 });
+        toast.success(saveStatus === 'draft' ? 'পণ্য ড্রাফট হিসেবে সেভ হয়েছে' : 'পণ্য পাবলিশ করা হয়েছে');
+      }
+      navigate('/admin/products');
+    } catch (err: any) {
+      const msg = err?.errors ? Object.values(err.errors as Record<string, string[]>).flat().join(', ') : (err?.message || 'পণ্য সেভ ব্যর্থ হয়েছে');
+      toast.error(msg);
+    } finally {
+      setSaving(false);
     }
-    navigate('/admin/products');
   };
 
   const renderVariationSection = (
@@ -433,8 +464,8 @@ const ProductForm = () => {
                   </TabsList>
                   <TabsContent value="upload" className="mt-2">
                     <input ref={featuredInputRef} type="file" accept="image/*" className="hidden" onChange={handleFeaturedUpload} />
-                    <Button type="button" variant="outline" className="w-full gap-2 border-dashed h-20" onClick={() => featuredInputRef.current?.click()}>
-                      <Upload className="w-5 h-5" /> ফিচার ইমেজ আপলোড করুন
+                    <Button type="button" variant="outline" className="w-full gap-2 border-dashed h-20" onClick={() => featuredInputRef.current?.click()} disabled={imageUploading}>
+                      <Upload className="w-5 h-5" /> {imageUploading ? 'আপলোড হচ্ছে...' : 'ফিচার ইমেজ আপলোড করুন'}
                     </Button>
                   </TabsContent>
                   <TabsContent value="link" className="mt-2">
@@ -462,8 +493,8 @@ const ProductForm = () => {
                   </TabsList>
                   <TabsContent value="upload" className="mt-2">
                     <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} />
-                    <Button type="button" variant="outline" className="w-full gap-2 border-dashed h-20" onClick={() => galleryInputRef.current?.click()}>
-                      <Upload className="w-5 h-5" /> একাধিক ইমেজ আপলোড করুন
+                    <Button type="button" variant="outline" className="w-full gap-2 border-dashed h-20" onClick={() => galleryInputRef.current?.click()} disabled={imageUploading}>
+                      <Upload className="w-5 h-5" /> {imageUploading ? 'আপলোড হচ্ছে...' : 'একাধিক ইমেজ আপলোড করুন'}
                     </Button>
                   </TabsContent>
                   <TabsContent value="link" className="mt-2">
@@ -689,12 +720,12 @@ const ProductForm = () => {
 
       {/* Bottom Save Bar */}
       <div className="sticky bottom-0 bg-background border-t p-4 -mx-6 flex justify-end gap-2">
-        <Button variant="outline" onClick={() => navigate('/admin/products')}>বাতিল</Button>
-        <Button variant="outline" className="gap-2" onClick={() => handleSave('draft')}>
-          <FileText className="w-4 h-4" /> ড্রাফট সেভ
+        <Button variant="outline" onClick={() => navigate('/admin/products')} disabled={saving}>বাতিল</Button>
+        <Button variant="outline" className="gap-2" onClick={() => handleSave('draft')} disabled={saving || imageUploading}>
+          <FileText className="w-4 h-4" /> {saving ? 'সেভ হচ্ছে...' : 'ড্রাফট সেভ'}
         </Button>
-        <Button className="gap-2" onClick={() => handleSave('published')}>
-          <Save className="w-4 h-4" /> পাবলিশ করুন
+        <Button className="gap-2" onClick={() => handleSave('published')} disabled={saving || imageUploading}>
+          <Save className="w-4 h-4" /> {saving ? 'পাবলিশ হচ্ছে...' : 'পাবলিশ করুন'}
         </Button>
       </div>
     </div>

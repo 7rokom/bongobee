@@ -84,7 +84,7 @@ const Products = () => {
 
   const toggleStatus = (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'published' ? 'draft' : 'published';
-    updateProduct(id, { status: newStatus as 'published' | 'draft' });
+    updateProduct(id, { status: newStatus as 'published' | 'draft' }).catch(() => {});
     toast.success(newStatus === 'published' ? 'পণ্য পাবলিশ করা হয়েছে' : 'পণ্য ড্রাফটে নেওয়া হয়েছে');
   };
 
@@ -107,7 +107,7 @@ const Products = () => {
             onImport={(items: Product[]) => {
               items.forEach(p => {
                 if (!productList.find(ep => ep.id === p.id)) {
-                  useProductStore.getState().addProduct(p);
+                  useProductStore.getState().addProduct(p).catch(() => {});
                 }
               });
             }}

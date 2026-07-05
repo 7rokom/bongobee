@@ -173,17 +173,13 @@ export const useProductStore = create<ProductStore>()(
       },
 
       addProduct: async (product) => {
-        try {
-          const created = await api.post('/admin/products', mapProductToRow(product));
-          set((state) => ({ products: [mapRowToProduct(created), ...state.products] }));
-        } catch { /* ignore */ }
+        const created = await api.post('/admin/products', mapProductToRow(product));
+        set((state) => ({ products: [mapRowToProduct(created), ...state.products] }));
       },
 
       updateProduct: async (id, updates) => {
-        try {
-          const updated = await api.put(`/admin/products/${id}`, mapProductToRow(updates));
-          set((state) => ({ products: state.products.map((p) => (p.id === id ? mapRowToProduct(updated) : p)) }));
-        } catch { /* ignore */ }
+        const updated = await api.put(`/admin/products/${id}`, mapProductToRow(updates));
+        set((state) => ({ products: state.products.map((p) => (p.id === id ? mapRowToProduct(updated) : p)) }));
       },
 
       deleteProduct: async (id) => {
