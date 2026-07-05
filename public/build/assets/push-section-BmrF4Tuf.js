@@ -1,0 +1,1 @@
+const r=["main","digital","blog","reseller"],i={main:"মেইন প্রোডাক্ট",digital:"ডিজিটাল প্রোডাক্ট",blog:"ব্লগ পোস্ট",reseller:"রিসেলার প্রোডাক্ট"};function s(t){return t.startsWith("/digital")?"digital":t.startsWith("/blog")?"blog":t.startsWith("/r/")?"reseller":"main"}export{r as P,i as a,s as g};
