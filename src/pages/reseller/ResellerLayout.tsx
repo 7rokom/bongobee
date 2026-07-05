@@ -1,4 +1,4 @@
-import { useEffect, useRef, Suspense } from 'react';
+import { useEffect, useRef, Suspense, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useResellerStore } from '@/stores/useResellerStore';
 import { useSiteSettingsStore } from '@/stores/useSiteSettingsStore';
@@ -8,7 +8,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar,
 } from '@/components/ui/sidebar';
 import { NavLink } from '@/components/NavLink';
-import { LayoutDashboard, ShoppingBag, Package, Wallet, LogOut, CreditCard, Landmark, Settings, FileText, Store, Truck } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Package, Wallet, LogOut, CreditCard, Landmark, Settings, FileText, Store, Truck, ChevronDown } from 'lucide-react';
 
 const dropshippingItems = [
   { title: 'ড্যাশবোর্ড', url: '/reseller', icon: LayoutDashboard },
@@ -41,6 +41,7 @@ function ResellerSidebar() {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === 'collapsed';
   const logoUrl = useSiteSettingsStore((s) => s.logoUrl);
+  const [dropshippingOpen, setDropshippingOpen] = useState(true);
 
   const handleLogout = () => {
     localStorage.removeItem('reseller-auth');
@@ -61,26 +62,36 @@ function ResellerSidebar() {
             className={collapsed ? "h-6 w-auto object-contain" : "h-8 w-auto object-contain"}
           />
         </div>
-        {/* ড্রপশিপিং গ্রুপ */}
+        {/* ড্রপশিপিং গ্রুপ — collapsible */}
         <SidebarGroup>
-          <SidebarGroupLabel className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1.5">
+          <SidebarGroupLabel
+            className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1.5 cursor-pointer select-none hover:text-foreground transition-colors"
+            onClick={() => !collapsed && setDropshippingOpen(o => !o)}
+          >
             <Truck className="h-3.5 w-3.5 shrink-0" />
-            {!collapsed && <span>ড্রপশিপিং</span>}
+            {!collapsed && (
+              <>
+                <span className="flex-1">ড্রপশিপিং</span>
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${dropshippingOpen ? '' : '-rotate-90'}`} />
+              </>
+            )}
           </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {dropshippingItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end={item.url === '/reseller'} onClick={handleNavClick} className="hover:bg-sidebar-accent" activeClassName="bg-primary/10 text-primary font-semibold">
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          {(dropshippingOpen || collapsed) && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {dropshippingItems.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild>
+                      <NavLink to={item.url} end={item.url === '/reseller'} onClick={handleNavClick} className="hover:bg-sidebar-accent" activeClassName="bg-primary/10 text-primary font-semibold">
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
 
         {/* বিভাজক */}
