@@ -31,10 +31,5 @@ export default defineConfig(({ mode }) => ({
     cssCodeSplit: true,
     sourcemap: false,
     minify: "esbuild",
-    rollupOptions: {
-      output: {
-        experimentalMinChunkSize: 10000,
-      },
-    },
   },
 }));
