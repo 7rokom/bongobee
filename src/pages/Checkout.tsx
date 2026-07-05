@@ -18,7 +18,7 @@ import { Truck, CheckCircle, ShieldCheck, Loader2 } from "lucide-react";
 import { validatePhone, validateName } from "@/lib/order-validation";
 import ValidationPopup from "@/components/ValidationPopup";
 import { generateFingerprint } from "@/lib/fingerprint";
-import { trackInitiateCheckout, trackPurchase } from "@/lib/dataLayer";
+import { trackInitiateCheckout } from "@/lib/dataLayer";
 import { checkFraud, checkHasPreviousOrder, type FraudCheckResult } from "@/lib/fraud-check";
 import { checkServerCooldown, setOrderCooldown, getCooldownMessage } from "@/lib/order-cooldown";
 import { getAdjustedPurchaseValue } from "@/lib/value-multiplier";
@@ -78,6 +78,7 @@ const Checkout = () => {
   const [orderId, setOrderId] = useState("");
   const [showPostOrderPopup, setShowPostOrderPopup] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState("");
+  const [pendingPurchasePayload, setPendingPurchasePayload] = useState<any>(null);
   const [orderNote, setOrderNote] = useState("");
 
   const checkoutAudioUrl = useSiteSettingsStore((s) => s.checkoutAudioUrl);
@@ -323,12 +324,16 @@ const Checkout = () => {
         }
         {
           const adjusted = getAdjustedPurchaseValue(total, fraudResult);
-          trackPurchase(roId, items.map((i) => ({ item_id: i.product.id, item_name: i.product.title, price: i.product.price, quantity: i.quantity, item_category: i.product.category })), total, deliveryCharge, discount, 'BDT', adjusted, { name, phone: normalizedPhone, address });
+          const purchasePayload = {
+            orderId: roId,
+            items: items.map((i) => ({ item_id: i.product.id, item_name: i.product.title, price: i.product.price, quantity: i.quantity, item_category: i.product.category })),
+            value: total, shipping: deliveryCharge, discount, currency: 'BDT', valueOverride: adjusted,
+            customer: { name, phone: normalizedPhone, address },
+          };
+          const popupEnabled = useFraudSettingsStore.getState().postOrderPopupEnabled;
+          if (popupEnabled) { setPendingOrderId(roId); setPendingPurchasePayload(purchasePayload); setShowPostOrderPopup(true); }
+          else { navigate(thankYouPath, { state: { orderId: roId, purchasePayload } }); }
         }
-
-        const popupEnabled = useFraudSettingsStore.getState().postOrderPopupEnabled;
-        if (popupEnabled) { setPendingOrderId(roId); setShowPostOrderPopup(true); }
-        else { navigate(thankYouPath, { state: { orderId: roId } }); }
         return;
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : 'অজানা ত্রুটি';
@@ -371,15 +376,16 @@ const Checkout = () => {
       return;
     }
 
-    // Normal flow: fire purchase tag
-    {
-      const adjusted = getAdjustedPurchaseValue(total, fraudResult);
-      trackPurchase(id, items.map((i) => ({ item_id: i.product.id, item_name: i.product.title, price: i.product.price, quantity: i.quantity, item_category: i.product.category })), total, deliveryCharge, discount, 'BDT', adjusted, { name, phone: normalizedPhone, address });
-    }
-
+    const adjusted = getAdjustedPurchaseValue(total, fraudResult);
+    const purchasePayload = {
+      orderId: id,
+      items: items.map((i) => ({ item_id: i.product.id, item_name: i.product.title, price: i.product.price, quantity: i.quantity, item_category: i.product.category })),
+      value: total, shipping: deliveryCharge, discount, currency: 'BDT', valueOverride: adjusted,
+      customer: { name, phone: normalizedPhone, address },
+    };
     const popupEnabled = useFraudSettingsStore.getState().postOrderPopupEnabled;
-    if (popupEnabled) { setPendingOrderId(id); setShowPostOrderPopup(true); }
-    else { navigate(thankYouPath, { state: { orderId: id } }); }
+    if (popupEnabled) { setPendingOrderId(id); setPendingPurchasePayload(purchasePayload); setShowPostOrderPopup(true); }
+    else { navigate(thankYouPath, { state: { orderId: id, purchasePayload } }); }
   };
 
   if (orderComplete) {
@@ -631,7 +637,7 @@ const Checkout = () => {
       </div>
 
       <ValidationPopup open={!!validationMsg} message={validationMsg} onClose={() => setValidationMsg("")} />
-      <PostOrderPopup orderId={pendingOrderId} isOpen={showPostOrderPopup} onComplete={(choice) => { setShowPostOrderPopup(false); navigate(thankYouPath, { state: { orderId: pendingOrderId, postOrderChoice: choice } }); }} />
+      <PostOrderPopup orderId={pendingOrderId} isOpen={showPostOrderPopup} onComplete={(choice) => { setShowPostOrderPopup(false); navigate(thankYouPath, { state: { orderId: pendingOrderId, postOrderChoice: choice, purchasePayload: pendingPurchasePayload } }); }} />
       <PageAudioPlayer
         audioUrl={checkoutAudioUrl}
         enabled={checkoutAudioEnabled}
