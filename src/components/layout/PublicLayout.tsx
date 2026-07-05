@@ -1,9 +1,11 @@
+import { lazy, Suspense } from 'react';
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import WishlistDrawer from "@/components/WishlistDrawer";
-import CartDrawer from "@/components/CartDrawer";
-import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import { Outlet } from "react-router-dom";
+
+const WishlistDrawer = lazy(() => import('@/components/WishlistDrawer'));
+const CartDrawer = lazy(() => import('@/components/CartDrawer'));
+const PushNotificationPrompt = lazy(() => import('@/components/PushNotificationPrompt'));
 
 const PublicLayout = () => (
   <>
@@ -12,9 +14,9 @@ const PublicLayout = () => (
       <Outlet />
     </main>
     <Footer />
-    <WishlistDrawer />
-    <CartDrawer />
-    <PushNotificationPrompt />
+    <Suspense fallback={null}><WishlistDrawer /></Suspense>
+    <Suspense fallback={null}><CartDrawer /></Suspense>
+    <Suspense fallback={null}><PushNotificationPrompt /></Suspense>
   </>
 );
 

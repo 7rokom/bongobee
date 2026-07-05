@@ -5,13 +5,17 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import PublicLayout from "@/components/layout/PublicLayout";
-import ResellerPublicLayout, { ResellerCheckoutLayout } from "@/components/layout/ResellerPublicLayout";
-import CustomDomainLayout from "@/components/layout/CustomDomainLayout";
 import ScrollToTop from "@/components/ScrollToTop";
 import SiteSettingsInitializer from "@/components/SiteSettingsInitializer";
 import DataLayerPageTracker from "@/components/DataLayerPageTracker";
 import DataInitializer from "@/components/DataInitializer";
 import { isOnCustomDomain } from "@/lib/custom-domain";
+
+const CustomDomainLayout = lazy(() => import("./components/layout/CustomDomainLayout"));
+const ResellerPublicLayout = lazy(() => import("./components/layout/ResellerPublicLayout"));
+const ResellerCheckoutLayout = lazy(() =>
+  import("./components/layout/ResellerPublicLayout").then(m => ({ default: m.ResellerCheckoutLayout }))
+);
 
 // Public pages — only Index is eager (homepage = fastest first paint).
 // Everything else lazy-loaded to drastically reduce initial bundle.
@@ -137,7 +141,7 @@ const App = () => (
         <SiteSettingsInitializer />
         {ON_CUSTOM_DOMAIN ? (
           // Custom domain: resolve reseller from domain, render full storefront
-          <CustomDomainLayout />
+          <Suspense fallback={<LazyFallback />}><CustomDomainLayout /></Suspense>
         ) : (
         <>
         <DataLayerPageTracker />
@@ -209,7 +213,7 @@ const App = () => (
           </Route>
 
           {/* Reseller Checkout/Thank-you Routes (no reseller ID in URL) */}
-          <Route path="/r" element={<ResellerCheckoutLayout />}>
+          <Route path="/r" element={<Suspense fallback={<LazyFallback />}><ResellerCheckoutLayout /></Suspense>}>
             <Route path="cart" element={<Suspense fallback={<LazyFallback />}><Cart /></Suspense>} />
             <Route path="checkout" element={<Suspense fallback={<LazyFallback />}><Checkout /></Suspense>} />
             <Route path="thank-you" element={<Suspense fallback={<LazyFallback />}><ThankYou /></Suspense>} />
@@ -217,7 +221,7 @@ const App = () => (
           </Route>
 
           {/* Reseller Public Routes (shareable links with reseller ID) */}
-          <Route path="/r/:resellerId" element={<ResellerPublicLayout />}>
+          <Route path="/r/:resellerId" element={<Suspense fallback={<LazyFallback />}><ResellerPublicLayout /></Suspense>}>
             <Route index element={<Suspense fallback={<LazyFallback />}><ResellerStorefrontHome /></Suspense>} />
             <Route path="product/:slug" element={<Suspense fallback={<LazyFallback />}><ProductPage /></Suspense>} />
             <Route path="lp/:slug" element={<Suspense fallback={<LazyFallback />}><LandingPage /></Suspense>} />
