@@ -519,6 +519,7 @@ const ProductPage = () => {
                 </div>
                 <Button
                   className="flex-1 gap-2 rounded-[5px] hover:bg-foreground hover:text-background text-[18px]"
+                  disabled={product.inStock === false}
                   onClick={() => {
                     if (!validateVariations()) return;
                     const allVariations = { ...selectedVariations };
@@ -555,31 +556,37 @@ const ProductPage = () => {
               </div>
 
               {/* Order Now */}
-              <Button
-                size="lg"
-                className="w-full rounded-[5px] text-[25px] font-bold gap-2 animate-order-bg-blink [background-image:none] hover:[background-image:none] border border-foreground hover:[animation:none] hover:!bg-[#f7f700] hover:!text-black shadow-[0_4px_15px_rgba(0,0,0,0.15)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all active:scale-[0.98]"
-                onClick={() => {
-                  if (product.isAffiliate && product.affiliateUrl) {
-                    window.open(product.affiliateUrl, '_blank', 'noopener,noreferrer');
-                    return;
-                  }
-                  if (isDeviceBlocked) {
-                    toast({ title: 'আপনার ডিভাইস ব্লক করা হয়েছে', variant: 'destructive' });
-                    return;
-                  }
-                  if (!validateVariations()) return;
-                  const allVariations = { ...selectedVariations };
-                  if (selectedColor) allVariations['কালার'] = selectedColor;
-                  if (selectedSize) allVariations['সাইজ'] = selectedSize;
-                  if (selectedWeight) allVariations['ওজন'] = selectedWeight;
-                  addToCart(cartProduct!, quantity, allVariations);
-                  trackAddToCart([{ item_id: product.id, item_name: product.title, price: currentPrice, quantity, item_category: product.category }]);
-                  navigate(checkoutPath);
-                }}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {product.isAffiliate ? (product.affiliateButtonText || 'এখনই অর্ডার করুন') : 'এখনই অর্ডার করুন'}
-              </Button>
+              {product.inStock === false ? (
+                <Button size="lg" disabled className="w-full rounded-[5px] text-[25px] font-bold bg-muted text-muted-foreground border border-border cursor-not-allowed">
+                  Stock Out 😥
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  className="w-full rounded-[5px] text-[25px] font-bold gap-2 animate-order-bg-blink [background-image:none] hover:[background-image:none] border border-foreground hover:[animation:none] hover:!bg-[#f7f700] hover:!text-black shadow-[0_4px_15px_rgba(0,0,0,0.15)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all active:scale-[0.98]"
+                  onClick={() => {
+                    if (product.isAffiliate && product.affiliateUrl) {
+                      window.open(product.affiliateUrl, '_blank', 'noopener,noreferrer');
+                      return;
+                    }
+                    if (isDeviceBlocked) {
+                      toast({ title: 'আপনার ডিভাইস ব্লক করা হয়েছে', variant: 'destructive' });
+                      return;
+                    }
+                    if (!validateVariations()) return;
+                    const allVariations = { ...selectedVariations };
+                    if (selectedColor) allVariations['কালার'] = selectedColor;
+                    if (selectedSize) allVariations['সাইজ'] = selectedSize;
+                    if (selectedWeight) allVariations['ওজন'] = selectedWeight;
+                    addToCart(cartProduct!, quantity, allVariations);
+                    trackAddToCart([{ item_id: product.id, item_name: product.title, price: currentPrice, quantity, item_category: product.category }]);
+                    navigate(checkoutPath);
+                  }}
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {product.isAffiliate ? (product.affiliateButtonText || 'এখনই অর্ডার করুন') : 'এখনই অর্ডার করুন'}
+                </Button>
+              )}
 
             </div>
           </div>
@@ -608,30 +615,36 @@ const ProductPage = () => {
 
       {/* Mobile Sticky Order Button */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white p-3 md:hidden border-t border-border">
-        <Button
-          className="w-full h-12 text-[27px] font-bold gap-2 rounded-[5px] animate-order-bg-blink border border-foreground shadow-[0_4px_15px_rgba(0,0,0,0.15)] [background-image:none] hover:[background-image:none] hover:!bg-[#f7f700] hover:!text-black hover:[animation:none]"
-          onClick={() => {
-            if (product.isAffiliate && product.affiliateUrl) {
-              window.open(product.affiliateUrl, '_blank', 'noopener,noreferrer');
-              return;
-            }
-            if (isDeviceBlocked) {
-              toast({ title: 'আপনার ডিভাইস ব্লক করা হয়েছে', variant: 'destructive' });
-              return;
-            }
-            if (!validateVariations()) return;
-            const allVariations = { ...selectedVariations };
-            if (selectedColor) allVariations['কালার'] = selectedColor;
-            if (selectedSize) allVariations['সাইজ'] = selectedSize;
-            if (selectedWeight) allVariations['ওজন'] = selectedWeight;
-            addToCart(cartProduct!, quantity, allVariations);
-            trackAddToCart([{ item_id: product.id, item_name: product.title, price: currentPrice, quantity, item_category: product.category }]);
-            navigate(checkoutPath);
-          }}
-        >
-          <ShoppingCart className="h-5 w-5" />
-          {product.isAffiliate ? (product.affiliateButtonText || 'এখনই অর্ডার করুন') : 'এখনই অর্ডার করুন'}
-        </Button>
+        {product.inStock === false ? (
+          <Button disabled className="w-full h-12 text-[27px] font-bold rounded-[5px] bg-muted text-muted-foreground border border-border cursor-not-allowed">
+            Stock Out 😥
+          </Button>
+        ) : (
+          <Button
+            className="w-full h-12 text-[27px] font-bold gap-2 rounded-[5px] animate-order-bg-blink border border-foreground shadow-[0_4px_15px_rgba(0,0,0,0.15)] [background-image:none] hover:[background-image:none] hover:!bg-[#f7f700] hover:!text-black hover:[animation:none]"
+            onClick={() => {
+              if (product.isAffiliate && product.affiliateUrl) {
+                window.open(product.affiliateUrl, '_blank', 'noopener,noreferrer');
+                return;
+              }
+              if (isDeviceBlocked) {
+                toast({ title: 'আপনার ডিভাইস ব্লক করা হয়েছে', variant: 'destructive' });
+                return;
+              }
+              if (!validateVariations()) return;
+              const allVariations = { ...selectedVariations };
+              if (selectedColor) allVariations['কালার'] = selectedColor;
+              if (selectedSize) allVariations['সাইজ'] = selectedSize;
+              if (selectedWeight) allVariations['ওজন'] = selectedWeight;
+              addToCart(cartProduct!, quantity, allVariations);
+              trackAddToCart([{ item_id: product.id, item_name: product.title, price: currentPrice, quantity, item_category: product.category }]);
+              navigate(checkoutPath);
+            }}
+          >
+            <ShoppingCart className="h-5 w-5" />
+            {product.isAffiliate ? (product.affiliateButtonText || 'এখনই অর্ডার করুন') : 'এখনই অর্ডার করুন'}
+          </Button>
+        )}
       </div>
 
       {/* YouTube video popup */}

@@ -24,7 +24,7 @@ import {
   LayoutDashboard, ShoppingCart, Package, FileText, Users, Store,
   Wallet, LogOut, Home, ChevronDown, ChevronRight,
   AlertCircle, UserCheck, BarChart3, Ticket, ShieldBan, ShieldAlert,
-  Grid3X3, Layers,
+  Grid3X3, Layers, ImageIcon,
   UserPlus, ClipboardList,
   HandCoins, PiggyBank, Archive,
   Settings, Globe, Truck, Database, MessageSquare, Link2,
@@ -69,6 +69,7 @@ const menuGroups: MenuGroup[] = [
       { title: 'সকল প্রোডাক্ট', url: '/admin/products', icon: Package },
       { title: 'ক্যাটাগরি', url: '/admin/categories', icon: Grid3X3 },
       { title: 'ভেরিয়েশন', url: '/admin/variations', icon: Layers },
+      { title: 'মিডিয়া', url: '/admin/media', icon: ImageIcon },
     ],
   },
   {

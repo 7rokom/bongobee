@@ -47,6 +47,7 @@ const IncompleteOrders = lazy(() => import("./pages/admin/IncompleteOrders"));
 
 const Coupons = lazy(() => import("./pages/admin/Coupons"));
 const Variations = lazy(() => import("./pages/admin/Variations"));
+const MediaManager = lazy(() => import("./pages/admin/MediaManager"));
 const AllEmployees = lazy(() => import("./pages/admin/AllEmployees"));
 const EmployeeReport = lazy(() => import("./pages/admin/EmployeeReport"));
 const AllResellers = lazy(() => import("./pages/admin/AllResellers"));
@@ -163,6 +164,7 @@ const App = () => (
             <Route path="products/edit/:id" element={<ProductForm />} />
             <Route path="categories" element={<Categories />} />
             <Route path="variations" element={<Variations />} />
+            <Route path="media" element={<MediaManager />} />
             <Route path="blog" element={<BlogAdmin />} />
             <Route path="employees" element={<AllEmployees />} />
             <Route path="employees/report" element={<EmployeeReport />} />

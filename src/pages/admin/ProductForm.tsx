@@ -46,6 +46,7 @@ const ProductForm = () => {
   const editingProduct = id ? products.find(p => p.id === id) : null;
 
   const [status, setStatus] = useState<'published' | 'draft'>(editingProduct?.status || 'published');
+  const [inStock, setInStock] = useState(editingProduct?.inStock ?? true);
   const [stockType, setStockType] = useState<'self' | 'vendor'>(editingProduct?.stockType || 'self');
   const [stockProductName, setStockProductName] = useState(editingProduct?.stockProductName || '');
   const [freeDelivery, setFreeDelivery] = useState(editingProduct?.freeDelivery || false);
@@ -235,6 +236,7 @@ const ProductForm = () => {
       images: galleryImages.length > 0 ? galleryImages : (featuredImage ? [featuredImage] : ['/placeholder.svg']),
       reviews: reviews.length > 0 ? reviews : undefined,
       reviewCount: reviews.length,
+      inStock,
       freeDelivery,
       isAffiliate,
       affiliateUrl: isAffiliate ? affiliateUrl.trim() : undefined,
@@ -247,7 +249,7 @@ const ProductForm = () => {
         await updateProduct(editingProduct.id, productData);
         toast.success('পণ্য আপডেট করা হয়েছে');
       } else {
-        await addProduct({ ...productData as Product, id: Date.now().toString(), inStock: true, rating: 0, reviewCount: 0 });
+        await addProduct({ ...productData as Product, id: Date.now().toString(), rating: 0, reviewCount: 0 });
         toast.success(saveStatus === 'draft' ? 'পণ্য ড্রাফট হিসেবে সেভ হয়েছে' : 'পণ্য পাবলিশ করা হয়েছে');
       }
       navigate('/admin/products');
@@ -643,8 +645,27 @@ const ProductForm = () => {
 
           {/* Stock Type */}
           <Card>
-            <CardHeader><CardTitle className="text-base">স্টক টাইপ</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">স্টক টাইপ</CardTitle>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-medium ${inStock ? 'text-green-600' : 'text-destructive'}`}>
+                    {inStock ? 'ইন স্টক' : 'স্টক আউট'}
+                  </span>
+                  <Switch
+                    checked={!inStock}
+                    onCheckedChange={(checked) => setInStock(!checked)}
+                    className={!inStock ? 'data-[state=checked]:bg-destructive' : ''}
+                  />
+                </div>
+              </div>
+            </CardHeader>
             <CardContent className="space-y-3">
+              {!inStock && (
+                <div className="px-3 py-2 bg-destructive/10 border border-destructive/30 rounded-lg text-xs text-destructive">
+                  স্টক আউট চালু — অর্ডার বাটনে "Stock Out 😥" দেখাবে, কেউ অর্ডার করতে পারবে না।
+                </div>
+              )}
               <div className="flex flex-col gap-2">
                 <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors text-sm ${stockType === 'self' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/50'}`}>
                   <input type="radio" name="stockType" className="hidden" checked={stockType === 'self'} onChange={() => setStockType('self')} />

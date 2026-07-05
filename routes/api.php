@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\Admin\MarketingController;
 use App\Http\Controllers\Api\Admin\FraudController;
 use App\Http\Controllers\Api\Admin\SettingsController;
 use App\Http\Controllers\Api\Admin\LandingPageController;
+use App\Http\Controllers\Api\Admin\MediaController;
 use App\Http\Controllers\Api\Public\ShopController;
 use App\Http\Controllers\Api\Public\CheckoutController;
 use App\Http\Controllers\Api\Reseller\ResellerPortalController;
@@ -149,6 +150,11 @@ Route::prefix('admin')->middleware(['auth:admin,employee'])->group(function () {
     // Products
     Route::post('/products/upload-image', [ProductController::class, 'uploadImage']);
     Route::apiResource('/products', ProductController::class);
+
+    // Media manager
+    Route::get('/media', [MediaController::class, 'index']);
+    Route::post('/media/upload', [MediaController::class, 'upload']);
+    Route::post('/media/delete', [MediaController::class, 'delete']);
     Route::apiResource('/categories', CategoryController::class)->except(['show']);
     Route::apiResource('/variations', VariationController::class)->except(['show']);
 
