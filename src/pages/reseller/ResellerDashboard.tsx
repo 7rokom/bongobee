@@ -10,7 +10,7 @@ import {
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import {
   Package, TrendingUp, Clock, Wallet, XCircle, RotateCcw,
-  CalendarIcon, ArrowUpRight, ArrowDownRight, Banknote,
+  CalendarIcon, ArrowUpRight, ArrowDownRight, Banknote, ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, subDays, startOfDay, endOfDay, startOfMonth, startOfYear, subYears, isWithinInterval } from 'date-fns';
@@ -267,12 +267,22 @@ const ResellerDashboard = () => {
                   'রিটার্ন': 'bg-orange-100 text-orange-700',
                 };
                 return (
-                  <div key={o.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors">
+                  <div key={o.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm text-foreground truncate">{o.customerName}</p>
                       <p className="text-[11px] text-muted-foreground">{o.date}</p>
+                      {o.trackingUrl && (
+                        <a
+                          href={o.trackingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-0.5"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" /> ট্র্যাক করুন
+                        </a>
+                      )}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 shrink-0">
                       <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-medium', statusColors[o.status] || 'bg-muted text-muted-foreground')}>
                         {o.status}
                       </span>

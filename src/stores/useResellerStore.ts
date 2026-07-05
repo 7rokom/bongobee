@@ -41,7 +41,7 @@ export interface ResellerOrder {
   items: { productId: string; productTitle: string; image: string; qty: number; resellerPrice: number; sellingPrice: number; profit: number; selectedColor?: string; selectedSize?: string; selectedWeight?: string; selectedVariations?: Record<string, string>; buyPrice?: number; stockProductName?: string; }[];
   deliveryCharge: number; packagingCharge?: number; codCharge?: number;
   totalSellingPrice: number; totalResellerCost: number; totalProfit: number;
-  status: string; date: string; notes?: string[]; adminNote?: string;
+  status: string; date: string; notes?: string[]; adminNote?: string; trackingUrl?: string;
   customerIp?: string; customerFingerprint?: string;
   paidReturnAmount?: number | null;
   assignedTo?: string;

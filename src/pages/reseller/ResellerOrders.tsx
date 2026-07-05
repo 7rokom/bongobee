@@ -443,7 +443,7 @@ const ResellerOrders = () => {
               </thead>
               <tbody>
                 {orders.map((o) => {
-                  const trackingLink = getTrackingLink(o.id);
+                  const trackingLink = o.trackingUrl || getTrackingLink(o.id);
                   const isLocked = !canChangeStatus(o.status);
                   const subtotalSelling = o.items.reduce((s, i) => s + i.sellingPrice * i.qty, 0);
                   const subtotalDP = o.items.reduce((s, i) => s + i.resellerPrice * i.qty, 0);
@@ -670,163 +670,104 @@ const ResellerOrders = () => {
           {/* Mobile Cards */}
           <div className="md:hidden divide-y">
             {orders.map((o) => {
-              const trackingLink = getTrackingLink(o.id);
+              const trackingLink = o.trackingUrl || getTrackingLink(o.id);
               const isLocked = !canChangeStatus(o.status);
-              const subtotalSelling = o.items.reduce((s, i) => s + i.sellingPrice * i.qty, 0);
-              const subtotalDP = o.items.reduce((s, i) => s + i.resellerPrice * i.qty, 0);
-              const profit = o.totalProfit;
 
               return (
-                <div key={o.id} className="p-3 space-y-3">
-                  {/* Top row: ID + Status + Date */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${
+                <div key={o.id} className="p-3 space-y-2.5">
+
+                  {/* Row 1: Order ID + Status + Date */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${
                         o.status === 'ডেলিভারড' ? 'bg-green-500' :
                         o.status === 'ক্যান্সেল' ? 'bg-red-500' :
-                        'bg-yellow-500'
+                        o.status === 'রিটার্ন' || o.status === 'রিটার্নিং' ? 'bg-orange-500' : 'bg-yellow-500'
                       }`} />
                       <span className="font-bold text-primary text-sm">{o.id}</span>
-                      <Badge className={`text-[10px] border ${statusColors[o.status] || ''}`} variant="secondary">{o.status}</Badge>
+                      <Badge className={`text-[10px] border shrink-0 ${statusColors[o.status] || ''}`} variant="secondary">{o.status}</Badge>
                     </div>
-                    <span className="text-[11px] text-muted-foreground">{formatDate(o.date)}</span>
+                    <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(o.date)}</span>
                   </div>
 
-                  {/* Customer */}
-                  <div>
-                    <p className="font-semibold text-sm">{o.customerName}</p>
-                    <p className="text-xs text-muted-foreground">{o.customerAddress}</p>
-                    <p className="text-xs">{o.customerPhone}</p>
-
-                    {/* Courier ratio bar (mobile) */}
-                    <button
-                      className="text-[11px] text-orange-600 hover:text-orange-700 inline-flex items-center gap-1 mt-1.5"
-                      onClick={() => checkCourierRatio(o.customerPhone)}
-                    >
-                      <ShieldAlert className="w-3 h-3" />
-                      ফ্রড চেক
-                    </button>
-                    {courierData[normalizePhone(o.customerPhone) || o.customerPhone] && (
-                      <div className="mt-1">
-                        {courierData[normalizePhone(o.customerPhone) || o.customerPhone].loading ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
-                        ) : (() => {
-                          const d = courierData[normalizePhone(o.customerPhone) || o.customerPhone];
-                          const pct = d.all > 0 ? Math.round((d.delivered / d.all) * 100) : 0;
-                          return (
-                            <div className="w-full">
-                              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${pct >= 70 ? 'bg-green-500' : pct >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                                  style={{ width: `${pct}%` }}
-                                />
-                              </div>
-                              <div className="flex items-center gap-1 mt-0.5 text-[10px]">
-                                <span className="text-foreground font-semibold">all: {d.all}</span>
-                                <span className="text-muted-foreground">|</span>
-                                <span className="text-green-600 font-semibold">delivered: {d.delivered}</span>
-                                <span className="text-muted-foreground">|</span>
-                                <span className="text-red-600 font-semibold">return: {d.returned}</span>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Products */}
-                  <div className="flex gap-2 overflow-x-auto">
+                  {/* Row 2: Products */}
+                  <div className="flex gap-2 overflow-x-auto pb-0.5">
                     {o.items.map((item: any, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5 shrink-0">
-                        <img src={item.image || '/placeholder.svg'} alt="" className="w-8 h-8 rounded object-cover border" />
-                        <div>
-                          <p className="text-[11px] font-medium truncate max-w-[100px]">{item.productTitle}</p>
+                      <div key={idx} className="flex items-center gap-1.5 shrink-0 bg-muted/40 rounded-lg px-2 py-1.5">
+                        <img src={item.image || '/placeholder.svg'} alt="" className="w-7 h-7 rounded object-cover border shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-medium truncate max-w-[80px]">{item.productTitle}</p>
                           <p className="text-[10px] text-muted-foreground">×{item.qty}</p>
-                           {(() => {
-                             const knownKeys = ['কালার', 'color', 'সাইজ', 'size', 'ওজন', 'weight'];
-                             const extraVars = item.selectedVariations ? Object.entries(item.selectedVariations).filter(([k]) => !knownKeys.includes(k)) : [];
-                             const hasAny = item.selectedColor || item.selectedSize || item.selectedWeight || extraVars.length > 0;
-                             return hasAny ? (
-                               <div className="flex flex-wrap gap-0.5">
-                                 {item.selectedColor && <span className="text-[8px] px-1 py-0.5 bg-pink-50 text-pink-700 rounded">{item.selectedColor}</span>}
-                                 {item.selectedSize && <span className="text-[8px] px-1 py-0.5 bg-blue-50 text-blue-700 rounded">{item.selectedSize}</span>}
-                                 {item.selectedWeight && <span className="text-[8px] px-1 py-0.5 bg-green-50 text-green-700 rounded">{item.selectedWeight}</span>}
-                                 {extraVars.map(([k, v]) => <span key={k} className="text-[8px] px-1 py-0.5 bg-purple-50 text-purple-700 rounded">{String(v)}</span>)}
-                               </div>
-                             ) : null;
-                           })()}
+                          {(() => {
+                            const knownKeys = ['কালার', 'color', 'সাইজ', 'size', 'ওজন', 'weight'];
+                            const extraVars = item.selectedVariations ? Object.entries(item.selectedVariations).filter(([k]) => !knownKeys.includes(k)) : [];
+                            const hasAny = item.selectedColor || item.selectedSize || item.selectedWeight || extraVars.length > 0;
+                            return hasAny ? (
+                              <div className="flex flex-wrap gap-0.5 mt-0.5">
+                                {item.selectedColor && <span className="text-[8px] px-1 py-0.5 bg-pink-50 text-pink-700 rounded">{item.selectedColor}</span>}
+                                {item.selectedSize && <span className="text-[8px] px-1 py-0.5 bg-blue-50 text-blue-700 rounded">{item.selectedSize}</span>}
+                                {item.selectedWeight && <span className="text-[8px] px-1 py-0.5 bg-green-50 text-green-700 rounded">{item.selectedWeight}</span>}
+                                {extraVars.map(([k, v]) => <span key={k} className="text-[8px] px-1 py-0.5 bg-purple-50 text-purple-700 rounded">{String(v)}</span>)}
+                              </div>
+                            ) : null;
+                          })()}
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  {/* Price breakdown */}
-                  <div className="bg-muted/30 rounded-lg p-2.5 text-xs space-y-0">
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-muted-foreground">সেল প্রাইজ:</span>
-                      <span className="font-medium">৳{subtotalSelling}</span>
+                  {/* Row 3: Customer + Contact buttons */}
+                  <div className="bg-muted/20 rounded-xl px-3 py-2 flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm truncate">{o.customerName}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{o.customerAddress}</p>
+                      <p className="text-[11px] text-foreground/70 font-mono">{o.customerPhone}</p>
                     </div>
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-muted-foreground">- DP প্রাইজ:</span>
-                      <span className="text-red-500">-৳{subtotalDP}</span>
-                    </div>
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-muted-foreground">- ডেলিভারি চার্জ:</span>
-                      <span className="text-red-500">-৳{o.deliveryCharge || 0}</span>
-                    </div>
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-muted-foreground">- প্যাকেজিং চার্জ:</span>
-                      <span className="text-red-500">-৳{o.packagingCharge || 0}</span>
-                    </div>
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-muted-foreground">- COD চার্জ:</span>
-                      <span className="text-red-500">-৳{o.codCharge || 0}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-t mt-1 font-bold text-green-600">
-                      <span>প্রফিট:</span>
-                      <span>+৳{profit}</span>
+                    <div className="flex gap-1 shrink-0">
+                      <button className="p-1.5 rounded-lg hover:bg-muted" onClick={() => window.open(`tel:${o.customerPhone}`)}>
+                        <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                      <button className="p-1.5 rounded-lg hover:bg-muted" onClick={() => copyPhone(o.customerPhone)}>
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                      <button className="p-1.5 rounded-lg hover:bg-muted" onClick={() => window.open(`https://wa.me/88${o.customerPhone}`, '_blank')}>
+                        <MessageCircle className="w-3.5 h-3.5 text-green-600" />
+                      </button>
                     </div>
                   </div>
 
-                  {/* Bottom actions */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-1">
-                      <button className="p-1.5 rounded hover:bg-muted" onClick={() => window.open(`tel:${o.customerPhone}`)}>
-                        <Phone className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                      <button className="p-1.5 rounded hover:bg-muted" onClick={() => copyPhone(o.customerPhone)}>
-                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                      <button className="p-1.5 rounded hover:bg-muted" onClick={() => window.open(`https://wa.me/88${o.customerPhone}`, '_blank')}>
-                        <MessageCircle className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                      {trackingLink && (
-                        <a href={trackingLink} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded hover:bg-muted">
-                          <ExternalLink className="w-3.5 h-3.5 text-primary" />
-                        </a>
-                      )}
-                      {getCarrybeeCid(o.id) && (
-                        <button
-                          type="button"
-                          onClick={() => copyCid(getCarrybeeCid(o.id)!)}
-                          className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground hover:bg-muted/70"
-                          title="CID কপি করুন"
-                        >
-                          CID: {getCarrybeeCid(o.id)} <Copy className="w-2.5 h-2.5" />
-                        </button>
-                      )}
+                  {/* Row 4: Price summary + Tracking button */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground text-xs">মোট:</span>
+                      <span className="font-semibold">৳{o.totalSellingPrice}</span>
+                      <span className="w-px h-3 bg-border inline-block" />
+                      <span className="text-muted-foreground text-xs">লাভ:</span>
+                      <span className="font-bold text-emerald-600">+৳{o.totalProfit}</span>
                     </div>
+                    {trackingLink && (
+                      <a
+                        href={trackingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-medium transition-colors shrink-0"
+                      >
+                        <ExternalLink className="w-3 h-3" /> ট্র্যাক করুন
+                      </a>
+                    )}
+                  </div>
 
-                    <div className="flex items-center gap-2">
+                  {/* Row 5: Status change + Action buttons */}
+                  <div className="flex items-center justify-between gap-2 pt-0.5 border-t border-muted/50">
+                    <div>
                       {!isLocked ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border ${statusColors[o.status] || 'bg-muted'}`}>
+                            <button className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border ${statusColors[o.status] || 'bg-muted'}`}>
                               {o.status} <ChevronDown className="w-3 h-3" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="start">
                             {o.status === 'পেন্ডিং' && (
                               <DropdownMenuItem onClick={() => handleStatusChange(o.id, 'কনফার্মড')}>কনফার্মড</DropdownMenuItem>
                             )}
@@ -838,17 +779,29 @@ const ResellerOrders = () => {
                       ) : (
                         <Badge className={`text-[10px] border ${statusColors[o.status] || ''}`} variant="secondary">{o.status}</Badge>
                       )}
-                      <button className="p-1.5 rounded hover:bg-amber-50" onClick={() => { setNoteOrder(o); setNoteText(''); }} title="নোট">
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        className="p-1.5 rounded-lg hover:bg-amber-50 relative"
+                        onClick={() => { setNoteOrder(o); setNoteText(''); }}
+                        title="নোট"
+                      >
                         <StickyNote className="w-4 h-4 text-amber-500" />
                         {o.notes && o.notes.length > 0 && (
-                          <span className="text-[9px] text-amber-600 ml-0.5">{o.notes.length}</span>
+                          <span className="absolute -top-0.5 -right-0.5 text-[8px] bg-amber-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold leading-none">{o.notes.length}</span>
                         )}
                       </button>
-                      <button className="p-1.5 rounded hover:bg-muted" onClick={() => setViewOrder(o)}>
+                      <button className="p-1.5 rounded-lg hover:bg-muted" onClick={() => setViewOrder(o)} title="বিস্তারিত">
                         <Eye className="w-4 h-4 text-muted-foreground" />
                       </button>
+                      {canEditOrder(o.status) && (
+                        <button className="p-1.5 rounded-lg hover:bg-muted" onClick={() => { setViewOrder(o); startEditing(o); }} title="এডিট">
+                          <Pencil className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      )}
                     </div>
                   </div>
+
                 </div>
               );
             })}

@@ -112,6 +112,13 @@ class FrontendResellerController extends Controller
             $code = '#' . $code;
         }
         $arr['id'] = $code;
+        // Attach tracking URL from follow_up_data (saved by admin when dispatching to courier).
+        $trackingUrl = DB::table('follow_up_data')
+            ->where('order_id', 'reseller-' . $code)
+            ->value('tracking_url');
+        if ($trackingUrl) {
+            $arr['tracking_url'] = $trackingUrl;
+        }
         return $arr;
     }
 
