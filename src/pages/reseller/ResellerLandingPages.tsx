@@ -7,6 +7,7 @@ import { Link2, Check, ExternalLink, Search, Loader2 } from 'lucide-react';
 import { useLandingPageStore } from '@/stores/useLandingPageStore';
 import { useProductStore } from '@/stores/useProductStore';
 import { useResellerStore } from '@/stores/useResellerStore';
+import { useResellerDomainStore } from '@/stores/useResellerDomainStore';
 import { toast } from '@/hooks/use-toast';
 
 const getStoredResellerId = () => {
@@ -20,6 +21,7 @@ const ResellerLandingPages = () => {
   const { products } = useProductStore();
   const resellers = useResellerStore((s) => s.resellers);
   const fetchResellers = useResellerStore((s) => s.fetchResellers);
+  const { domain, fetchDomain } = useResellerDomainStore();
 
   const [search, setSearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -30,6 +32,7 @@ const ResellerLandingPages = () => {
 
   useEffect(() => {
     fetchPages();
+    fetchDomain();
     if (resellers.length === 0) fetchResellers();
   }, []);
 
@@ -43,7 +46,11 @@ const ResellerLandingPages = () => {
     [published, search],
   );
 
-  const buildLink = (slug: string) => `${window.location.origin}/r/${ref}/lp/${slug}`;
+  const verifiedDomain = domain?.status === 'verified' ? domain.domain : null;
+  const buildLink = (slug: string) =>
+    verifiedDomain
+      ? `https://${verifiedDomain}/lp/${slug}`
+      : `${window.location.origin}/r/${ref}/lp/${slug}`;
 
   const handleCopy = (slug: string, id: string) => {
     navigator.clipboard.writeText(buildLink(slug)).then(() => {
