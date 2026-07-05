@@ -1,16 +1,16 @@
 import { useEffect, useRef, Suspense } from 'react';
-import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useResellerStore } from '@/stores/useResellerStore';
 import { useSiteSettingsStore } from '@/stores/useSiteSettingsStore';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu,
-  SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar,
 } from '@/components/ui/sidebar';
 import { NavLink } from '@/components/NavLink';
-import { LayoutDashboard, ShoppingBag, Package, Wallet, LogOut, CreditCard, Landmark, Settings, FileText, Store } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Package, Wallet, LogOut, CreditCard, Landmark, Settings, FileText, Store, Truck } from 'lucide-react';
 
-const menuItems = [
+const dropshippingItems = [
   { title: 'ড্যাশবোর্ড', url: '/reseller', icon: LayoutDashboard },
   { title: 'শপ পেজ', url: '/reseller/shop', icon: ShoppingBag },
   { title: 'ল্যান্ডিং পেজ', url: '/reseller/landing-pages', icon: FileText },
@@ -18,6 +18,9 @@ const menuItems = [
   { title: 'ব্যালেন্স', url: '/reseller/balance', icon: Wallet },
   { title: 'পেমেন্ট মেথড', url: '/reseller/payment-methods', icon: Landmark },
   { title: 'পেমেন্ট রিকুয়েস্ট', url: '/reseller/payments', icon: CreditCard },
+];
+
+const standaloneItems = [
   { title: 'My Store', url: '/reseller/custom-domain', icon: Store },
   { title: 'সেটিং', url: '/reseller/settings', icon: Settings },
 ];
@@ -58,13 +61,39 @@ function ResellerSidebar() {
             className={collapsed ? "h-6 w-auto object-contain" : "h-8 w-auto object-contain"}
           />
         </div>
+        {/* ড্রপশিপিং গ্রুপ */}
         <SidebarGroup>
+          <SidebarGroupLabel className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1.5">
+            <Truck className="h-3.5 w-3.5 shrink-0" />
+            {!collapsed && <span>ড্রপশিপিং</span>}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {dropshippingItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end={item.url === '/reseller'} onClick={handleNavClick} className="hover:bg-sidebar-accent" activeClassName="bg-primary/10 text-primary font-semibold">
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* বিভাজক */}
+        <div className="mx-3 border-t border-sidebar-border" />
+
+        {/* Standalone মেনু */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {standaloneItems.map((item) => (
+                <SidebarMenuItem key={item.url}>
+                  <SidebarMenuButton asChild>
+                    <NavLink to={item.url} onClick={handleNavClick} className="hover:bg-sidebar-accent" activeClassName="bg-primary/10 text-primary font-semibold">
                       <item.icon className="mr-2 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
